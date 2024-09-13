@@ -3,7 +3,7 @@
     <Header />
     <ion-content class="ion-padding">
       <h2 class="selected-day">{{ formattedDate }}</h2>
-      <ion-segment value="purchase-sales">
+      <ion-segment value="purchase-sales" class="segment-container">
         <ion-segment-button value="purchase" @click="navigateTo('purchase')">
           <ion-icon :icon="cartOutline"></ion-icon>
           <ion-label>Purchase</ion-label>
@@ -17,7 +17,7 @@
       <ion-grid v-if="isDataLoaded">
         <ion-row>
           <ion-col size="4" v-for="image in filteredPurchases" :key="image.id">
-            <ion-card>
+            <ion-card class="image-card">
               <img :src="image.image" alt="Purchase Image" @click="showDetailedView(image)" />
               <ion-button fill="clear" class="dots-menu" @click="showOptions(image, $event)">
                 <ion-icon :icon="ellipsisVertical"></ion-icon>
@@ -30,7 +30,6 @@
       <div v-if="isDataLoaded && filteredPurchases.length === 0" class="no-data-message">
         <p>No bill found for the selected company and date.</p>
       </div>
-
 
       <!-- Detailed View Modal -->
       <ion-modal :is-open="detailedViewImage !== null" @didDismiss="closeDetailedView" class="detailed-modal">
@@ -105,7 +104,6 @@
         },
       ]"></ion-alert>
 
-
       <!-- Upload button and modal -->
       <div class="bottom-buttons">
         <ion-button class="upload-button" @click="openAddModal">
@@ -143,50 +141,28 @@
         </ion-content>
       </ion-modal>
 
-      <!-- <div>
+      <div class="tax-info-container">
         <ion-row>
           <ion-col>
-            <ion-card>
-              <ion-card-title>Purchase Tax</ion-card-title>
-              <ion-item>
-                {{ purchaseTax.toFixed(2) }}
-              </ion-item>
-            </ion-card>
-          </ion-col>
-          <ion-col>
-            <ion-card>
-              <ion-card-title>Sales Tax</ion-card-title>
-              <ion-item>
-                {{ salesTax.toFixed(2) }}
-              </ion-item>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col>
-            <ion-card>
-              <ion-card-title>Total Tax</ion-card-title>
-              <ion-item>
-                {{ totalTax.toFixed(2) }}
-              </ion-item>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-      </div> -->
-      <div>
-        <ion-row>
-          <ion-col>
-            <ion-card>
-              <ion-card-title>Current Period</ion-card-title>
+            <ion-card class="tax-card">
+              <ion-card-title>Current Tax Period</ion-card-title>
               <ion-item>
                 {{ formattedPeriod }}
               </ion-item>
             </ion-card>
           </ion-col>
+          <ion-col>
+            <ion-card class="tax-card">
+              <ion-card-title>Tax Payment Due Date</ion-card-title>
+              <ion-item>
+                {{ taxPaymentDate }}
+              </ion-item>
+            </ion-card>
+          </ion-col>
         </ion-row>
         <ion-row>
           <ion-col>
-            <ion-card>
+            <ion-card class="tax-card">
               <ion-card-title>Purchase Tax</ion-card-title>
               <ion-item>
                 {{ purchaseTax.toFixed(2) }}
@@ -194,7 +170,7 @@
             </ion-card>
           </ion-col>
           <ion-col>
-            <ion-card>
+            <ion-card class="tax-card">
               <ion-card-title>Sales Tax</ion-card-title>
               <ion-item>
                 {{ salesTax.toFixed(2) }}
@@ -204,7 +180,7 @@
         </ion-row>
         <ion-row>
           <ion-col>
-            <ion-card>
+            <ion-card class="tax-card">
               <ion-card-title>Total Tax</ion-card-title>
               <ion-item>
                 {{ totalTax.toFixed(2) }}
@@ -213,10 +189,10 @@
           </ion-col>
         </ion-row>
       </div>
+
     </ion-content>
   </ion-page>
 </template>
-
 
 <script>
 import { defineComponent, ref, computed, } from 'vue';
@@ -228,7 +204,8 @@ import { cartOutline, cashOutline, cloudUploadOutline, closeCircle, ellipsisVert
 import Header from '@/components/Header.vue';
 import { mapActions, mapState } from 'vuex';
 // import { format, parseISO, isValid } from 'date-fns';
-import { parseISO, addMonths, isWithinInterval, differenceInMonths,format } from 'date-fns';
+
+import { parseISO, addMonths, isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 
 export default defineComponent({
   name: 'DayDetails',
@@ -445,6 +422,56 @@ export default defineComponent({
     // totalTax() {
     //   return this.purchaseTax + this.salesTax;
     // }
+    // currentCompany() {
+    //   return this.CompanyList.find(company => company.id.toString() === this.companyId.toString());
+    // },
+
+    // currentPeriod() {
+    //   if (!this.currentCompany || !this.currentCompany.ved) return null;
+      
+    //   const vedDate = parseISO(this.currentCompany.ved);
+    //   const now = new Date();
+    //   const monthsSinceVed = differenceInMonths(now, vedDate);
+    //   const periodNumber = Math.floor(monthsSinceVed / 3);
+      
+    //   const periodStart = addMonths(vedDate, periodNumber * 3);
+    //   const periodEnd = addMonths(periodStart, 3);
+      
+    //   return { start: periodStart, end: periodEnd };
+    // },
+
+    // purchaseTax() {
+    //   if (!this.PurchaseData || !this.PurchaseData.data || !this.currentPeriod) return 0;
+      
+    //   return this.PurchaseData.data
+    //     .filter(purchase => {
+    //       const purchaseDate = parseISO(purchase.date);
+    //       return purchase.companyId.toString() === this.companyId.toString() &&
+    //              isWithinInterval(purchaseDate, this.currentPeriod);
+    //     })
+    //     .reduce((total, purchase) => total + (purchase.purchase_tax_amount || 0), 0);
+    // },
+
+    // salesTax() {
+    //   if (!this.SlaeList || !this.SlaeList.data || !this.currentPeriod) return 0;
+      
+    //   return this.SlaeList.data
+    //     .filter(sale => {
+    //       const saleDate = parseISO(sale.date);
+    //       return sale.companyId.toString() === this.companyId.toString() &&
+    //              isWithinInterval(saleDate, this.currentPeriod);
+    //     })
+    //     .reduce((total, sale) => total + (sale.sale_tax_amount || 0), 0);
+    // },
+
+    // totalTax() {
+    //   return this.purchaseTax + this.salesTax;
+    // },
+
+    // formattedPeriod() {
+    //   if (!this.currentPeriod) return 'N/A';
+    //   return `${this.currentPeriod.start.toDateString()} - ${this.currentPeriod.end.toDateString()}`;
+    // }
     currentCompany() {
       return this.CompanyList.find(company => company.id.toString() === this.companyId.toString());
     },
@@ -452,13 +479,13 @@ export default defineComponent({
     currentPeriod() {
       if (!this.currentCompany || !this.currentCompany.ved) return null;
       
-      const vedDate = parseISO(this.currentCompany.ved);
+      const vedDate = startOfDay(parseISO(this.currentCompany.ved));
       const now = new Date();
-      const monthsSinceVed = differenceInMonths(now, vedDate);
+      const monthsSinceVed = Math.floor((now - vedDate) / (1000 * 60 * 60 * 24 * 30.44)); // Approximate months
       const periodNumber = Math.floor(monthsSinceVed / 3);
       
       const periodStart = addMonths(vedDate, periodNumber * 3);
-      const periodEnd = addMonths(periodStart, 3);
+      const periodEnd = endOfDay(addMonths(periodStart, 3));
       
       return { start: periodStart, end: periodEnd };
     },
@@ -493,8 +520,14 @@ export default defineComponent({
 
     formattedPeriod() {
       if (!this.currentPeriod) return 'N/A';
-      return `${this.currentPeriod.start.toDateString()} - ${this.currentPeriod.end.toDateString()}`;
+      return `${format(this.currentPeriod.start, 'MMM d, yyyy')} - ${format(this.currentPeriod.end, 'MMM d, yyyy')}`;
+    },
+
+    taxPaymentDate() {
+      if (!this.currentPeriod) return 'N/A';
+      return format(this.currentPeriod.end, 'MMM d, yyyy');
     }
+
   },
   methods: {
     ...mapActions('bill', ['GET_PURCHASE_LIST', 'ADD_BILL', 'UPDATE_BILL', 'DELETE_BILL']),
@@ -619,6 +652,80 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.selected-day {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: var(--ion-color-primary);
+}
+
+.segment-container {
+  margin-bottom: 1rem;
+}
+
+.image-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.image-card:hover {
+  transform: translateY(-5px);
+}
+
+.image-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+
+.dots-menu {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  --background: rgba(255, 255, 255, 0.7);
+  --color: var(--ion-color-dark);
+}
+
+.no-data-message {
+  text-align: center;
+  color: var(--ion-color-medium);
+  margin-top: 2rem;
+}
+
+.detailed-modal {
+  --height: 90%;
+  --width: 90%;
+  --border-radius: 10px;
+}
+
+.detailed-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.image-container {
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.detailed-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  --color: white;
+}
+
 .selected-image {
   width: 100%;
   height: auto;
@@ -626,45 +733,41 @@ export default defineComponent({
   border-radius: 8px;
 }
 
-ion-card img {
-  width: 100%;
-  height: 250px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
 .bottom-buttons {
   position: fixed;
   bottom: 1rem;
   right: 1rem;
-}
-
-.fullscreen-modal {
-  width: 100vw;
-  height: 100vh;
-}
-
-.full-screen-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: black;
-}
-
-.full-screen-image {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  color: white;
+  z-index: 1000;
 }
 
 .upload-button {
-  background-color: #3880ff;
-  color: white;
+  --background: var(--ion-color-primary);
+  --color: white;
+  --border-radius: 20px;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tax-info-container {
+  margin-top: 2rem;
+}
+
+.tax-card {
+  background-color: var(--ion-color-light);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tax-card ion-card-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--ion-color-primary);
+  padding: 1rem 1rem 0.5rem;
+}
+
+.tax-card ion-item {
+  --background: transparent;
+  --padding-start: 1rem;
+  --padding-end: 1rem;
+  --min-height: 40px;
 }
 </style>

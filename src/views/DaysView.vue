@@ -29,7 +29,7 @@
 <script>
 import { defineComponent, ref, computed, watch, onMounted } from 'vue';
 import { IonPage, IonContent, IonButton, IonIcon } from '@ionic/vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router'; // Import useRoute
 import { image } from 'ionicons/icons';
 import Header from '../components/Header.vue';
 import { mapActions, mapState } from 'vuex';
@@ -51,8 +51,10 @@ export default defineComponent({
   },
   setup(props) {
     const router = useRouter();
+    const route = useRoute(); // Access route
     const selectedDay = ref(null);
     const daysWithBills = ref([]);
+    const companyId = route.params.companyId; // Extract companyId from route params
 
     const months = [
       { name: 'January' }, { name: 'February' }, { name: 'March' },
@@ -70,7 +72,8 @@ export default defineComponent({
       router.push({
         name: 'DayDetails',
         params: {
-          date: dateString
+          date: dateString,
+          companyId, // Pass companyId to the next route
         }
       });
     };
@@ -82,6 +85,7 @@ export default defineComponent({
       weekdays,
       onDayClick,
       image,
+      companyId, // Include companyId in the return to use in the template
     };
   },
   computed: {
@@ -110,26 +114,24 @@ export default defineComponent({
     hasImageForDay(day) {
       const date = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const result = this.daysWithBills.includes(date);
-      // console.log(`Checking date ${date}: ${result}`);
       return result;
     },
     checkBillsForMonth() {
-      // console.log('Checking bills for month:', this.month + 1, this.year);
-      // console.log('PurchaseList:', this.PurchaseList);
       this.daysWithBills = [];
       if (this.PurchaseList && this.PurchaseList.data) {
         this.PurchaseList.data.forEach(purchase => {
           const purchaseDate = new Date(purchase.date);
-          if (purchaseDate.getMonth() === this.month && purchaseDate.getFullYear() === this.year) {
+          // Only check for the current companyId
+          if (purchaseDate.getMonth() === this.month && 
+              purchaseDate.getFullYear() === this.year &&
+              purchase.companyId === parseInt(this.companyId)) { // Filter by companyId
             const dateString = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(purchaseDate.getDate()).padStart(2, '0')}`;
             if (!this.daysWithBills.includes(dateString)) {
               this.daysWithBills.push(dateString);
-              // console.log(`Added date with bill: ${dateString}`);
             }
           }
         });
       }
-      //console.log('Days with bills:', this.daysWithBills);
     },
   },
   watch: {
@@ -145,6 +147,124 @@ export default defineComponent({
     this.GET_PURCHASE_LIST();
   },
 });
+// import { defineComponent, ref, computed, watch, onMounted } from 'vue';
+// import { IonPage, IonContent, IonButton, IonIcon } from '@ionic/vue';
+// import { useRouter } from 'vue-router';
+// import { image } from 'ionicons/icons';
+// import Header from '../components/Header.vue';
+// import { mapActions, mapState } from 'vuex';
+
+// export default defineComponent({
+//   name: 'DaysView',
+//   components: {
+//     IonPage, IonContent, IonButton, IonIcon, Header,
+//   },
+//   props: {
+//     month: {
+//       type: Number,
+//       required: true,
+//     },
+//     year: {
+//       type: Number,
+//       required: true,
+//     },
+//   },
+//   setup(props) {
+//     const router = useRouter();
+//     const selectedDay = ref(null);
+//     const daysWithBills = ref([]);
+
+//     const months = [
+//       { name: 'January' }, { name: 'February' }, { name: 'March' },
+//       { name: 'April' }, { name: 'May' }, { name: 'June' },
+//       { name: 'July' }, { name: 'August' }, { name: 'September' },
+//       { name: 'October' }, { name: 'November' }, { name: 'December' },
+//     ];
+//     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+//     const onDayClick = (day) => {
+//       const selectedDate = new Date(props.year, props.month, day);
+//       selectedDay.value = day;
+//       const adjustedMonth = props.month + 1;
+//       const dateString = `${props.year}-${String(adjustedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+//       router.push({
+//         name: 'DayDetails',
+//         params: {
+//           date: dateString
+//         }
+//       });
+//     };
+
+//     return {
+//       selectedDay,
+//       daysWithBills,
+//       months,
+//       weekdays,
+//       onDayClick,
+//       image,
+//     };
+//   },
+//   computed: {
+//     ...mapState('bill', ['PurchaseList']),
+//     getDaysInMonth() {
+//       return () => Array.from(
+//         { length: new Date(this.year, this.month + 1, 0).getDate() },
+//         (_, i) => i + 1
+//       );
+//     },
+//     firstDayOfMonth() {
+//       return new Date(this.year, this.month, 1).getDay();
+//     },
+//   },
+//   methods: {
+//     ...mapActions('bill', ['GET_PURCHASE_LIST']),
+//     isCurrentDay(day) {
+//       const today = new Date();
+//       return today.getDate() === day &&
+//         today.getMonth() === this.month &&
+//         today.getFullYear() === this.year;
+//     },
+//     isSelectedDay(day) {
+//       return this.selectedDay === day;
+//     },
+//     hasImageForDay(day) {
+//       const date = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+//       const result = this.daysWithBills.includes(date);
+//       // console.log(`Checking date ${date}: ${result}`);
+//       return result;
+//     },
+//     checkBillsForMonth() {
+//       // console.log('Checking bills for month:', this.month + 1, this.year);
+//       // console.log('PurchaseList:', this.PurchaseList);
+//       this.daysWithBills = [];
+//       if (this.PurchaseList && this.PurchaseList.data) {
+//         this.PurchaseList.data.forEach(purchase => {
+//           const purchaseDate = new Date(purchase.date);
+//           if (purchaseDate.getMonth() === this.month && purchaseDate.getFullYear() === this.year) {
+//             const dateString = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(purchaseDate.getDate()).padStart(2, '0')}`;
+//             if (!this.daysWithBills.includes(dateString)) {
+//               this.daysWithBills.push(dateString);
+//               // console.log(`Added date with bill: ${dateString}`);
+//             }
+//           }
+//         });
+//       }
+//       //console.log('Days with bills:', this.daysWithBills);
+//     },
+//   },
+//   watch: {
+//     PurchaseList: {
+//       handler() {
+//         this.checkBillsForMonth();
+//       },
+//       deep: true,
+//       immediate: true
+//     }
+//   },
+//   mounted() {
+//     this.GET_PURCHASE_LIST();
+//   },
+// });
 </script>
 
 <style scoped>
