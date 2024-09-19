@@ -5,41 +5,32 @@
       <div class="content-wrapper">
         <h1 class="welcome-text">Welcome, {{ userName }}!</h1>
         <ion-button expand="block" @click="openCompanyModal" class="company-select-btn">
-          <span class="material-icons">business</span><span class="dg">Select Company</span>
+          <span class="material-icons">business</span><span class="btn-text">Select Company</span>
         </ion-button>
 
         <div class="card-container">
-          <div class="card">
-            <ion-icon name="shopping_cart" style="color: #E74C3C;"></ion-icon>
+          <div class="card purchases-card">
+            <ion-icon name="cart-outline"></ion-icon>
             <div class="card-content">
               <h3>Purchases</h3>
               <p>{{ PurchaseAmount }}</p>
             </div>
           </div>
-          <div class="card">
-            <ion-icon name="trending_up" style="color: #E74C3C;"></ion-icon>
+          <div class="card sales-card">
+            <ion-icon name="trending-up-outline"></ion-icon>
             <div class="card-content">
               <h3>Sales</h3>
               <p>{{ SaleTotalAmount }}</p>
             </div>
           </div>
-        </div>
-
-        <div class="card-container">
-          <div class="card">
-            <ion-icon name="calculate" style="color: #E74C3C;"></ion-icon>
+          <div class="card vat-card">
+            <ion-icon name="calculator-outline"></ion-icon>
             <div class="card-content">
               <h3>VAT</h3>
-              <p>{{ totalVAT }}</p> <!-- Bind the computed VAT total here -->
+              <p>{{ totalVAT }}</p>
             </div>
           </div>
         </div>
-
-        <!--<ion-button expand="block" @click="addTransaction" class="add-transaction-btn">
-          <span class="material-icons">add_circle</span>
-          Add New Bill
-        </ion-button> -->
-        
       </div>
     </ion-content>
 
@@ -54,7 +45,6 @@
         </ion-list>
       </ion-content>
     </ion-modal>
-    
   </ion-page>
 </template>
 
@@ -142,14 +132,14 @@ const selectCompany = (company) => {
   methods: {
     ...mapActions('client', ['GET_CLIENT_LIST']),
     ...mapActions('company', ['GET_COMPANY_LIST']),
-    ...mapActions('purchase', ['GET_PURCHASE_AMOUNT', 'GET_PURCHASE_LIST']),
+    ...mapActions('purchase', ['GET_PURCHASE_AMOUNT',]),
     ...mapActions('sales', ['GET_SALES_AMOUNT', 'GET_SALE_LIST']),
   },
   mounted() {
     this.GET_COMPANY_LIST();
     this.GET_PURCHASE_AMOUNT();
     this.GET_SALES_AMOUNT();
-    this.GET_PURCHASE_LIST();
+    // this.GET_PURCHASE_LIST();
     this.GET_SALE_LIST();
 
     const auth = JSON.parse(localStorage.getItem('user'));
@@ -164,75 +154,127 @@ const selectCompany = (company) => {
 
 <style scoped>
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
 
 ion-content::part(scroll) {
   display: flex;
   flex-direction: column;
 }
 
-.dg {
-  color: white;
-}
-
 .content-wrapper {
-  padding: 1.5rem;
+  padding: 2rem;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #F5F7FA 0%, #E4E7EB 100%);
+  background: linear-gradient(135deg, #f6f9fc 0%, #e9f2f9 100%);
+  border-radius: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem;
 }
 
 .welcome-text {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
+  font-size: 2.8rem;
+  margin-bottom: 2rem;
   text-align: center;
-  font-weight: bold;
-  background: linear-gradient(45deg, #2C3E50, #3498DB, #8E44AD);
+  font-weight: 700;
+  background: linear-gradient(45deg, #3498DB, #8E44AD, #2C3E50);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: gradientText 6s ease infinite;
+  animation: gradientText 8s ease infinite;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes gradientText {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  /* Two columns */
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.card-container:nth-child(3) {
-  grid-column: span 2;
-  /* Make the third card span across both columns */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
 .card {
   background: white;
-  border-radius: 15px;
-  height: 155px;
-  padding: 1rem;
+  border-radius: 20px;
+  height: 200px;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  animation: fadeInUp 0.5s ease forwards;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  animation: fadeInUp 0.8s ease forwards;
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(30px);
+  overflow: hidden;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+  transform: rotate(45deg);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+}
+
+.card:hover::before {
+  opacity: 1;
+  transform: rotate(45deg) translate(50%, 50%);
+}
+
+.card:hover {
+  transform: translateY(-15px) scale(1.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.purchases-card { background: linear-gradient(135deg, #74b9ff, #0984e3); }
+.sales-card { background: linear-gradient(135deg, #55efc4, #00b894); }
+.vat-card { background: linear-gradient(135deg, #fab1a0, #e17055); }
+
+.card ion-icon {
+  font-size: 3.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.card:hover ion-icon {
+  transform: scale(1.2);
+}
+
+.card-content {
+  text-align: center;
+  color: white;
+}
+
+.card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.card p {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes fadeInUp {
@@ -242,60 +284,23 @@ ion-content::part(scroll) {
   }
 }
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.card .material-icons {
-  font-size: 8rem;
-  margin-bottom: 1rem;
-}
-
-.card-content {
-  text-align: center;
-}
-
-.card h3 {
-  font-size: 0.9rem;
-  margin-bottom: 0.3rem;
-  color: #2C3E50;
-}
-
-.card p {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #34495E;
-  margin: 0;
-}
-
-.add-transaction-btn,
 .company-select-btn {
-  --background: #3498DB;
-  --background-hover: #2980B9;
-  --background-activated: #2980B9;
+  --background: #5CB180;
+  --background-hover: #27AE60;
+  --background-activated: #27AE60;
   --color: #FFFFFF;
-  font-weight: bold;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
   border-radius: 15px;
   overflow: hidden;
   position: relative;
   transition: all 0.3s ease;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.2rem 2rem;
+  font-size: 1.1rem;
 }
 
-.add-transaction-btn {
-  animation: pulse 2s infinite;
-}
-
-.company-select-btn {
-  --background: #5CB180;
-  --background-hover: #27AE60;
-  --background-activated: #27AE60;
-}
-
-.add-transaction-btn::before,
 .company-select-btn::before {
   content: '';
   position: absolute;
@@ -309,34 +314,22 @@ ion-content::part(scroll) {
   transition: transform 0.3s ease;
 }
 
-.add-transaction-btn:hover::before,
 .company-select-btn:hover::before {
   transform: scaleX(1);
 }
 
-.add-transaction-btn:active,
 .company-select-btn:active {
   transform: scale(0.98);
 }
 
-.add-transaction-btn .material-icons,
 .company-select-btn .material-icons {
-  margin-right: 8px;
-  font-size: 1.2rem;
+  margin-right: 10px;
+  font-size: 1.5rem;
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
-  }
-
-  70% {
-    box-shadow: 0 0 0 15px rgba(52, 152, 219, 0);
-  }
-
-  100% {
-    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
-  }
+.btn-text {
+  position: relative;
+  z-index: 1;
 }
 
 .company-item {
@@ -346,10 +339,7 @@ ion-content::part(scroll) {
   --border-color: rgba(0, 0, 0, 0.1);
   --border-style: solid;
   --border-width: 0 0 1px 0;
-  --padding-start: 1rem;
-  --padding-end: 1rem;
-  --padding-top: 1rem;
-  --padding-bottom: 1rem;
+  --padding: 1rem;
   transition: all 0.3s ease;
 }
 
@@ -369,57 +359,50 @@ ion-content::part(scroll) {
 
 @media (max-width: 768px) {
   .welcome-text {
-    font-size: 1.6rem;
+    font-size: 2.2rem;
   }
 
-  .card .material-icons {
-    font-size: 1.8rem;
+  .card {
+    height: 180px;
   }
 
   .card h3 {
-    font-size: 0.85rem;
+    font-size: 1.1rem;
   }
 
   .card p {
-    font-size: 1rem;
+    font-size: 1.6rem;
   }
 }
 
 @media (max-width: 480px) {
   .content-wrapper {
-    padding: 1rem;
+    padding: 1.5rem;
   }
 
   .welcome-text {
-    font-size: 1.3rem;
-    margin-bottom: 1rem;
+    font-size: 1.8rem;
   }
 
   .card-container {
-    gap: 0.8rem;
+    gap: 1.5rem;
   }
 
   .card {
-    padding: 0.8rem;
-  }
-
-  .card .material-icons {
-    font-size: 2.5rem;
+    height: 160px;
   }
 
   .card h3 {
-    font-size: 0.8rem;
+    font-size: 1rem;
   }
 
   .card p {
-    font-size: 0.9rem;
+    font-size: 1.4rem;
   }
 
-  .add-transaction-btn,
   .company-select-btn {
-    font-size: 0.8rem;
-    --padding-top: 0.8rem;
-    --padding-bottom: 0.8rem;
+    font-size: 1rem;
+    padding: 1rem 1.5rem;
   }
 }
 </style>

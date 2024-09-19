@@ -1,4 +1,3 @@
-
 <template>
   <ion-page>
     <Header />
@@ -50,7 +49,7 @@
 
 <script>
 import { defineComponent, ref, computed } from 'vue';
-import { IonPage, IonContent, IonCard, IonCardContent, IonIcon, IonGrid, IonRow, IonCol, IonSpinner } from '@ionic/vue';
+import { IonPage, IonContent, IonCard, IonCardContent, IonIcon, IonGrid, IonRow, IonCol, IonSpinner, IonSearchbar } from '@ionic/vue';
 import { bagOutline, calendarOutline, cashOutline } from 'ionicons/icons';
 import Header from '@/components/Header.vue';
 import { mapActions, mapState } from 'vuex';
@@ -69,37 +68,47 @@ export default defineComponent({
     IonCol,
     Header,
     IonSpinner,
+    IonSearchbar,
   },
   setup() {
     const route = useRoute();
     const isDataLoaded = ref(false);
-    
+    const searchQuery = ref('');
+
     return {
       bagOutline,
       calendarOutline,
       cashOutline,
       route,
       isDataLoaded,
+      searchQuery,
     };
   },
   computed: {
     ...mapState('purchase', ['PurchaseData']),
     filteredPurchases() {
-    if (!this.PurchaseData || !this.PurchaseData.data) {
-      return [];
+      if (!this.PurchaseData || !this.PurchaseData.data) {
+        return [];
+      }
+
+      const companyId = this.route.params.companyId;
+      const routeDate = this.route.params.date;
+
+      return this.PurchaseData.data.filter(item => {
+        const itemDate = new Date(item.date).toISOString().split('T')[0];
+        const itemCompanyId = item.company_id || (item.company && item.company.id);
+
+        const matchesRoute = (!companyId || itemCompanyId.toString() === companyId) &&
+          (!routeDate || itemDate === routeDate);
+
+        const matchesSearch = this.searchQuery.toLowerCase().trim() === '' ||
+          (item.company && item.company.name && item.company.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+          item.amount.toString().includes(this.searchQuery) ||
+          itemDate.includes(this.searchQuery);
+
+        return matchesRoute && matchesSearch;
+      });
     }
-
-    const companyId = this.route.params.companyId;
-    const routeDate = this.route.params.date;
-
-    return this.PurchaseData.data.filter(item => {
-      const itemDate = new Date(item.date).toISOString().split('T')[0]; // Format the item date
-      const itemCompanyId = item.company_id || (item.company && item.company.id);
-
-      // Compare dates and companyId
-      return itemCompanyId && itemCompanyId.toString() === companyId && itemDate === routeDate;
-    });
-  }
   },
   methods: {
     ...mapActions('purchase', ['GET_PURCHASE_LISTS']),
@@ -109,7 +118,6 @@ export default defineComponent({
         this.isDataLoaded = true;
       } catch (error) {
         console.error('Failed to load purchase data:', error);
-        // Handle error (e.g., show error message to user)
       }
     },
     formatDate(dateString) {

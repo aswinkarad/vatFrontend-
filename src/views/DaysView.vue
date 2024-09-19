@@ -29,7 +29,7 @@
 <script>
 import { defineComponent, ref, computed, watch, onMounted } from 'vue';
 import { IonPage, IonContent, IonButton, IonIcon } from '@ionic/vue';
-import { useRouter, useRoute } from 'vue-router'; // Import useRoute
+import { useRouter, useRoute } from 'vue-router'; 
 import { image } from 'ionicons/icons';
 import Header from '../components/Header.vue';
 import { mapActions, mapState } from 'vuex';
@@ -51,10 +51,10 @@ export default defineComponent({
   },
   setup(props) {
     const router = useRouter();
-    const route = useRoute(); // Access route
+    const route = useRoute();
     const selectedDay = ref(null);
     const daysWithBills = ref([]);
-    const companyId = route.params.companyId; // Extract companyId from route params
+    const companyId = route.params.companyId; 
 
     const months = [
       { name: 'January' }, { name: 'February' }, { name: 'March' },
@@ -73,7 +73,7 @@ export default defineComponent({
         name: 'DayDetails',
         params: {
           date: dateString,
-          companyId, // Pass companyId to the next route
+          companyId, 
         }
       });
     };
@@ -85,7 +85,7 @@ export default defineComponent({
       weekdays,
       onDayClick,
       image,
-      companyId, // Include companyId in the return to use in the template
+      companyId, 
     };
   },
   computed: {
@@ -121,10 +121,9 @@ export default defineComponent({
       if (this.PurchaseList && this.PurchaseList.data) {
         this.PurchaseList.data.forEach(purchase => {
           const purchaseDate = new Date(purchase.date);
-          // Only check for the current companyId
-          if (purchaseDate.getMonth() === this.month && 
-              purchaseDate.getFullYear() === this.year &&
-              purchase.companyId === parseInt(this.companyId)) { // Filter by companyId
+          if (purchaseDate.getMonth() === this.month &&
+            purchaseDate.getFullYear() === this.year &&
+            purchase.companyId === parseInt(this.companyId)) { // Filter by companyId
             const dateString = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(purchaseDate.getDate()).padStart(2, '0')}`;
             if (!this.daysWithBills.includes(dateString)) {
               this.daysWithBills.push(dateString);
@@ -284,6 +283,7 @@ export default defineComponent({
   --background-hover: #3171E0;
   --color: #FFFFFF;
 }
+
 .selected-day {
   --background: #FF0000;
   --background-activated: #CC0000;
@@ -349,8 +349,10 @@ ion-button:active {
 }
 
 .has-bill {
-  --background: green !important; /* Green background for days with bills */
-  --color: #FFFFFF; /* White text color */
+  --background: green !important;
+  /* Green background for days with bills */
+  --color: #FFFFFF;
+  /* White text color */
 }
 
 .button-inner {

@@ -4,9 +4,9 @@
     <ion-content class="ion-padding">
       <!-- Search Bar -->
       <ion-searchbar v-model="searchQuery" placeholder="Search sales..." animated debounce="500"
-        class="custom-searchbar"></ion-searchbar>
+      class="custom-searchbar"></ion-searchbar>
 
-      <ion-grid>
+      <ion-grid v-if="isDataLoaded">
         <ion-row>
           <ion-col size="12" size-md="6" size-lg="4" v-for="(item, index) in filteredSales" :key="index">
             <ion-card class="sales-card animate-bg">
@@ -37,6 +37,9 @@
           </ion-col>
         </ion-row>
       </ion-grid>
+      <div v-if="isDataLoaded && filteredSales.length === 0" class="no-data-message">
+        <p>No Sales found for the selected company and date.</p>
+      </div>
 
 
       <ion-popover :is-open="showPopover" @didDismiss="closePopover" :event="popoverEvent">
@@ -291,8 +294,20 @@ export default defineComponent({
       );
       return company ? company.name : 'Unknown Company';
     },
-    filteredSales() {
+    // filteredSales() {
 
+    //   if (!this.SlaeList || !this.SlaeList.data) {
+    //     return [];
+    //   }
+
+    //   return this.SlaeList.data.filter(item => {
+    //     const matchesCompany = !this.urlCompanyId || item.companyId.toString() === this.urlCompanyId;
+    //     const matchesDate = !this.urlDate || this.formatDate(item.date) === this.urlDate;
+    //     const matchesSearch = item.company.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+    //     return matchesCompany && matchesDate && matchesSearch;
+    //   });
+    // }
+    filteredSales() {
       if (!this.SlaeList || !this.SlaeList.data) {
         return [];
       }
@@ -300,7 +315,11 @@ export default defineComponent({
       return this.SlaeList.data.filter(item => {
         const matchesCompany = !this.urlCompanyId || item.companyId.toString() === this.urlCompanyId;
         const matchesDate = !this.urlDate || this.formatDate(item.date) === this.urlDate;
-        const matchesSearch = item.company.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+        const matchesSearch = this.searchQuery
+          ? item.company.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+            item.amount.toString().includes(this.searchQuery) ||
+            this.formatDate(item.date).includes(this.searchQuery)
+          : true;
         return matchesCompany && matchesDate && matchesSearch;
       });
     }
@@ -375,11 +394,18 @@ export default defineComponent({
   mounted() {
     this.GET_SALE_LIST();
     this.GET_COMPANY_LIST();
+    this.loadPurchaseData();
   },
 });
 </script>
 
 <style scoped>
+.no-data-message {
+  text-align: center;
+  color: var(--ion-color-medium);
+  margin-top: 2rem;
+}
+
 .options-button {
   position: absolute;
   top: 0.5rem;

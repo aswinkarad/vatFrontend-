@@ -7,6 +7,7 @@ import company from './modules/company';
 import date from './modules/date';
 import purchase from './modules/purchase';
 import sales from './modules/sales';
+import vat from './modules/vat'
 
 
 export default createStore({
@@ -27,6 +28,7 @@ export default createStore({
     company,
     date,
     purchase,
-    sales
+    sales,
+    vat
   }
 })
