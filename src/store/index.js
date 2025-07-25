@@ -8,7 +8,7 @@ import date from './modules/date';
 import purchase from './modules/purchase';
 import sales from './modules/sales';
 import vat from './modules/vat'
-
+import vendors from './modules/vendors'
 
 export default createStore({
   namespaced: true,
@@ -29,6 +29,7 @@ export default createStore({
     date,
     purchase,
     sales,
-    vat
+    vat,
+    vendors
   }
 })

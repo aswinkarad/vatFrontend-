@@ -19,18 +19,25 @@ export default {
         },
     },
     actions: {
-       async USER_LOGIN({ commit, state }, payload){
-            const login = await axios({
-                method: 'post',
-                url: `${import.meta.env.VITE_API_BASE_URL}client/login`,
-                data:{
-                    name: payload.name,
-                    password: payload.password
-                }
-            })
-             commit('SET_USER' ,login.data)
-            console.log(state.userData)
-        },
+    async USER_LOGIN({ commit }, payload) {
+    try {
+        const login = await axios({
+            method: 'post',
+            url: `${import.meta.env.VITE_API_BASE_URL}client/login`,
+            data: {
+                name: payload.name,
+                password: payload.password
+            }
+        });
+        // Ensure your backend sends all necessary user data including access_token
+        // and potentially a refresh_token here.
+        commit('SET_USER', login.data); // login.data should contain the user object + token(s)
+        return login.data; // Return data for success handling in component
+    } catch (error) {
+        // Re-throw the error so the component can catch and display
+        throw error;
+    }
+},
     // },
     async CLIENT_SIGN_UP({ commit, state }, payload) {
         const auth = JSON.parse(localStorage.getItem('user'))

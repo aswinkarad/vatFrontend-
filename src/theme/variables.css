@@ -1,60 +1,123 @@
-/* Import your custom fonts */
+/* Import Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
-/* Base font style */
-body {
-  font-family: 'Roboto', sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f4f4f4; /* Light gray background for the whole app */
-  color: #333; /* Dark gray text color */
+/* =====================
+   Base Light Theme Variables
+   ===================== */
+:root {
+  --ion-font-family: 'Roboto', sans-serif;
+
+  /* Background & Text */
+  --ion-background-color: #f4f4f4;
+  --ion-text-color: #333;
+  --ion-heading-color: #222;
+
+  /* Primary Colors */
+  --ion-color-primary: #3880ff;
+  --ion-color-primary-rgb: 56, 128, 255;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #3171e0;
+  --ion-color-primary-tint: #4c8dff;
+
+  /* Secondary Colors */
+  --ion-color-secondary: #3dc2ff;
+  --ion-color-secondary-rgb: 61, 194, 255;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #36abe0;
+  --ion-color-secondary-tint: #50c8ff;
+
+  /* Tertiary */
+  --ion-color-tertiary: #5260ff;
+  --ion-color-tertiary-rgb: 82, 96, 255;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #4854e0;
+  --ion-color-tertiary-tint: #6370ff;
+
+  /* Success, Warning, Danger */
+  --ion-color-success: #2dd36f;
+  --ion-color-warning: #ffc409;
+  --ion-color-danger: #eb445a;
+
+  /* Light & Dark */
+  --ion-color-light: #f4f4f4;
+  --ion-color-medium: #92949c;
+  --ion-color-dark: #222428;
+
+  /* UI Component Colors */
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: #333;
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-color: #333;
+  --ion-card-background: #ffffff;
+  --ion-card-color: #333;
+  --ion-item-background: #ffffff;
+  --ion-item-color: #333;
+
+  /* Headings */
+  --ion-h1-font-size: 2.5rem;
+  --ion-h2-font-size: 2rem;
+  --ion-h3-font-size: 1.75rem;
+  --ion-h4-font-size: 1.5rem;
+  --ion-h5-font-size: 1.25rem;
+  --ion-h6-font-size: 1rem;
+
+  --ion-h1-font-weight: 700;
+  --ion-h2-font-weight: 700;
+  --ion-h3-font-weight: 700;
+  --ion-h4-font-weight: 700;
+  --ion-h5-font-weight: 700;
+  --ion-h6-font-weight: 700;
 }
 
-/* Container for central alignment */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-/* Heading styles */
+/* Headings Style */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Roboto', sans-serif;
-  color: #222; /* Slightly darker text for headings */
+  font-family: var(--ion-font-family);
+  color: var(--ion-heading-color);
 }
 
-h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
+/* =====================
+   Prevent Dark Mode (System or CSS Class)
+   ===================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-background-color: #f4f4f4;
+    --ion-text-color: #333;
+    --ion-heading-color: #222;
+    --ion-toolbar-background: #ffffff;
+    --ion-toolbar-color: #333;
+    --ion-tab-bar-background: #ffffff;
+    --ion-tab-bar-color: #333;
+    --ion-card-background: #ffffff;
+    --ion-card-color: #333;
+    --ion-item-background: #ffffff;
+    --ion-item-color: #333;
+  }
 }
 
-h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
+html.ion-palette-dark, html.dark, body.dark {
+  --ion-background-color: #f4f4f4;
+  --ion-text-color: #333;
+  --ion-heading-color: #222;
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: #333;
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-color: #333;
+  --ion-card-background: #ffffff;
+  --ion-card-color: #333;
+  --ion-item-background: #ffffff;
+  --ion-item-color: #333;
 }
 
-h3 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+/* Override native Android dark mode */
+:root, html, body {
+  color-scheme: light;
 }
 
-h4 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-h5 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-h6 {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+/* Force light mode components */
+ion-content, ion-item, ion-card, ion-header, ion-footer, ion-toolbar, ion-tab-bar, ion-button {
+  --background: var(--ion-background-color);
+  --color: var(--ion-text-color);
 }

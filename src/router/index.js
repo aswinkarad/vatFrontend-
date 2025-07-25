@@ -6,53 +6,85 @@ import DayDetails from '../views/DayDetails.vue';
 import PurchasePage from '../views/Purchase.vue';
 import SalesPage from '../views/Sales.vue';
 import Login from '../views/Login.vue';
+// import Signup from '../views/Signup.vue'; // Assuming you might have a signup page
 import axios from 'axios';
-import store from '../store';
+// import store from '../store'; // Store is not directly used in router, but actions/mutations are dispatched from components.
 
 const routes = [
   {
+    // This is your root path, which acts as the initial entry point.
+    // It redirects based on authentication status.
     path: '/',
-    redirect: '/login',
-    beforeEnter: (to, from, next) => {
-      const auth = JSON.parse(localStorage.getItem('user'))
-      if (auth) {
+    redirect: '/home', // Redirect authenticated users to home by default
+    beforeEnter: async (to, from, next) => {
+      const auth = JSON.parse(localStorage.getItem('user')); // Get stored user data
 
-        // next()
-        axios({
-          method: 'get',
-          url: `${import.meta.env.VITE_API_BASE_URL}client/authCheck`,
-          headers: {
-            Authorization: 'Bearer ' + auth.access_token
+      // Check if user data exists and has an access_token
+      if (auth && auth.access_token) {
+        try {
+          // Attempt to validate the access_token with the backend
+          await axios({
+            method: 'get',
+            url: `${import.meta.env.VITE_API_BASE_URL}client/authCheck`,
+            headers: {
+              Authorization: 'Bearer ' + auth.access_token
+            }
+          });
+          // If authCheck succeeds, proceed to the intended route.
+          // If the user lands on '/', redirect them to '/home'.
+          if (to.path === '/') {
+            next('/home');
+          } else {
+            next(); // Allow navigation to other authenticated routes
           }
-        }).then((result) => {
-          // console.log(result);
-
-          next()
-
-        }).catch(err => {
-          localStorage.clear('user')
-          next({ name: 'signIn' })
-        })
+        } catch (err) {
+          // If authCheck fails (e.g., token expired, invalid, network error)
+          console.error('Authentication check failed:', err);
+          localStorage.clear(); // Clear all local storage items, effectively logging out
+          next({ name: 'Login' }); // Redirect to the login page using its name
+        }
       } else {
-        next({ name: 'signIn' })
+        // No user data or access_token found, redirect to login page
+        next({ name: 'Login' });
       }
-      // next() 
     },
   },
-  // {
-  //   path: '/',
-  //   redirect: '/login'
-  // },
   {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: Login,
+    // This guard prevents an already logged-in user from seeing the login page
+    beforeEnter: (to, from, next) => {
+      const auth = JSON.parse(localStorage.getItem('user'));
+      if (auth && auth.access_token) {
+        // If logged in, redirect to home
+        next('/home');
+      } else {
+        next(); // Otherwise, allow access to the login page
+      }
+    }
   },
+  // If you have a signup page
+  // {
+  //   path: '/signup',
+  //   name: 'Signup',
+  //   component: Signup,
+  //   beforeEnter: (to, from, next) => {
+  //     const auth = JSON.parse(localStorage.getItem('user'));
+  //     if (auth && auth.access_token) {
+  //       next('/home'); // If already logged in, redirect from signup
+  //     } else {
+  //       next();
+  //     }
+  //   }
+  // },
   {
     path: '/home',
     name: 'Home',
     component: HomePage,
-    // meta: { requiresAuth: true }
+    // You can also add `beforeEnter` here if you want specific auth checks for /home,
+    // but the root '/' guard already covers it generally.
+    // meta: { requiresAuth: true } // Removed meta for simplicity, relying on root guard
   },
   {
     path: '/months/:companyId',
@@ -68,7 +100,8 @@ const routes = [
       month: parseInt(route.params.month, 10),
       year: parseInt(route.params.year, 10)
     }),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true } // Keep meta if you want more granular control,
+                                // but ensure it works with your root guard.
   },
   {
     path: '/day-details/companyId/:companyId/date/:date',
@@ -93,28 +126,26 @@ const routes = [
   }
 ];
 
-// const router = createRouter({
-//   history: createWebHistory(import.meta.env.BASE_URL),
-//   routes
-// });
+const router = createRouter({
+  history: createWebHistory(), // Using createWebHistory for standard web history API
+  routes,
+});
 
-// Navigation guard to check authentication status
+// Optional: If you want to use meta fields for authentication on specific routes,
+// you can re-introduce a global beforeEach guard.
+// However, your current root '/' guard is quite comprehensive.
 // router.beforeEach(async (to, from, next) => {
 //   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-//   const isAuthenticated = localStorage.getItem('auth');
-
-//   if (requiresAuth && !isAuthenticated) {
+//   const auth = JSON.parse(localStorage.getItem('user'));
+//
+//   if (requiresAuth && (!auth || !auth.access_token)) {
 //     next('/login');
-//   } else if (to.path === '/login' && isAuthenticated) {
+//   } else if (to.path === '/login' && auth && auth.access_token) {
 //     next('/home');
 //   } else {
 //     next();
 //   }
 // });
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
 
 export default router;

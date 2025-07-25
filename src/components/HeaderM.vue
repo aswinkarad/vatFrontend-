@@ -4,7 +4,8 @@
     <ion-toolbar>
       <div class="logo-container">
         <!-- <ion-icon :icon="analyticsOutline" class="logo-icon"></ion-icon> -->
-        <ion-title class="animated-title">VAT</ion-title>
+        <ion-title class="animated-title">Wadiah 
+        Digital</ion-title>
       </div>
       <ion-buttons slot="end">
         <ion-button @click="closeModal" class="close-btn">
