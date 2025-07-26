@@ -7,9 +7,12 @@ import company from './modules/company';
 import date from './modules/date';
 import purchase from './modules/purchase';
 import sales from './modules/sales';
-import vat from './modules/vat'
-import vendors from './modules/vendors'
-
+import vat from './modules/vat';
+import vendors from './modules/vendors';
+import categories from './modules/categories';
+import subcategories from './modules/subcategories';
+import salestypes from './modules/salestypes';
+import taxTypes from './modules/taxTypes';
 export default createStore({
   namespaced: true,
   state: {
@@ -30,6 +33,10 @@ export default createStore({
     purchase,
     sales,
     vat,
-    vendors
+    vendors,
+    categories,
+    subcategories,
+    salestypes,
+    taxTypes
   }
 })
