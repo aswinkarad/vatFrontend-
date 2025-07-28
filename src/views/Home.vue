@@ -33,7 +33,7 @@
             </div>
             <div class="card-content">
               <h3>Purchases</h3>
-              <p class="amount-text">{{ formatAmount(PurchaseAmount) }}</p>
+              <p class="amount-text">{{ formatAmount(purchaseAmount) }}</p>
             </div>
           </div>
 
@@ -180,24 +180,95 @@ export default defineComponent({
 
     // Purchase VAT calculation
     purchaseVAT() {
+      console.log('=== CALCULATING PURCHASE VAT - STEP BY STEP ===');
       let purchaseVAT = 0;
 
       try {
+        console.log('Step 1: Raw PurchaseData from store:', this.PurchaseData);
+        
         const purchaseArray = Array.isArray(this.PurchaseData) ? this.PurchaseData : (this.PurchaseData?.data || []);
+        console.log('Step 2: Processed purchase array:', purchaseArray);
+        console.log('Step 3: Purchase array length:', purchaseArray.length);
 
         if (purchaseArray.length > 0) {
-          purchaseVAT = purchaseArray.reduce((acc, item) => {
+          console.log('Step 4: Processing each purchase item for VAT:');
+          
+          purchaseVAT = purchaseArray.reduce((acc, item, index) => {
             const vatAmount = parseFloat(item.purchase_tax_amount) || 0;
+            console.log(`  Item ${index + 1}:`, {
+              item: item,
+              purchase_tax_amount: item.purchase_tax_amount,
+              parsed_vat: vatAmount,
+              running_total: acc + vatAmount
+            });
             return acc + vatAmount;
           }, 0);
+          
+          console.log('Step 5: Final Purchase VAT calculation complete');
         } else {
+          console.log('Step 4: No purchase items found for VAT calculation');
         }
       } catch (error) {
         console.error('Error calculating Purchase VAT:', error);
         purchaseVAT = 0;
       }
 
+      console.log('Final Purchase VAT Result:', purchaseVAT);
+      console.log('=== END PURCHASE VAT CALCULATION ===');
       return purchaseVAT;
+    },
+
+    // Purchase Amount calculation (step by step) - FIXED VERSION
+    purchaseAmount() {
+      console.log('=== CALCULATING TOTAL PURCHASE AMOUNT - STEP BY STEP ===');
+      let totalAmount = 0;
+
+      try {
+        console.log('Step 1: Raw PurchaseData from store:', this.PurchaseData);
+        
+        const purchaseArray = Array.isArray(this.PurchaseData) ? this.PurchaseData : (this.PurchaseData?.data || []);
+        console.log('Step 2: Processed purchase array:', purchaseArray);
+        console.log('Step 3: Purchase array length:', purchaseArray.length);
+
+        if (purchaseArray.length > 0) {
+          console.log('Step 4: Processing each purchase item for total amount:');
+          
+          totalAmount = purchaseArray.reduce((acc, item, index) => {
+            // Try different possible amount field names in order of preference
+            const amount = parseFloat(item.purchase_amount) || 
+                          parseFloat(item.total_amount) || 
+                          parseFloat(item.amount) || 
+                          parseFloat(item.purchase_total) ||
+                          parseFloat(item.net_amount) ||
+                          parseFloat(item.gross_amount) || 0;
+            
+            console.log(`  Item ${index + 1}:`, {
+              item: item,
+              purchase_amount: item.purchase_amount,
+              total_amount: item.total_amount,
+              amount: item.amount,
+              purchase_total: item.purchase_total,
+              net_amount: item.net_amount,
+              gross_amount: item.gross_amount,
+              parsed_amount: amount,
+              running_total: acc + amount
+            });
+            return acc + amount;
+          }, 0);
+          
+          console.log('Step 5: Final Purchase Amount calculation complete');
+        } else {
+          console.log('Step 4: No purchase items found for amount calculation');
+        }
+      } catch (error) {
+        console.error('Error calculating Purchase Amount:', error);
+        totalAmount = 0;
+      }
+
+      console.log('Final Purchase Amount Result:', totalAmount);
+      console.log('Comparison with Store PurchaseAmount:', this.PurchaseAmount);
+      console.log('=== END PURCHASE AMOUNT CALCULATION ===');
+      return totalAmount;
     },
 
     // Sales VAT calculation
@@ -227,12 +298,14 @@ export default defineComponent({
         salesVAT = 0;
       }
 
+      console.log('Total Sales VAT:', salesVAT);
       return salesVAT;
     },
 
     // Total VAT = Sales VAT - Purchase VAT
     totalVAT() {
       const total = this.salesVAT - this.purchaseVAT;
+      console.log('Sales VAT:', this.salesVAT, 'Purchase VAT:', this.purchaseVAT, 'Total VAT (Sales - Purchase):', total);
       return total;
     },
   },
@@ -364,14 +437,40 @@ export default defineComponent({
 
         console.log('Loading data for company:', this.defaultCompany.name, 'with params:', params);
 
-        await Promise.all([
-          this.GET_PURCHASE_AMOUNT(params),
-          this.GET_PURCHASE_LISTS(params),
-          this.GET_SALES_AMOUNT(params),
-          this.GET_SALE_LIST(params),
-        ]);
+        console.log('=== CALLING STORE ACTIONS ===');
+        console.log('About to call GET_PURCHASE_AMOUNT...');
+        await this.GET_PURCHASE_AMOUNT(params);
+        console.log('GET_PURCHASE_AMOUNT completed. Store PurchaseAmount:', this.PurchaseAmount);
+        
+        console.log('About to call GET_PURCHASE_LISTS...');
+        await this.GET_PURCHASE_LISTS(params);
+        console.log('GET_PURCHASE_LISTS completed. PurchaseData:', this.PurchaseData);
+        
+        console.log('About to call GET_SALES_AMOUNT...');
+        await this.GET_SALES_AMOUNT(params);
+        console.log('GET_SALES_AMOUNT completed. Store SaleTotalAmount:', this.SaleTotalAmount);
+        
+        console.log('About to call GET_SALE_LIST...');
+        await this.GET_SALE_LIST(params);
+        console.log('GET_SALE_LIST completed. SlaeList:', this.SlaeList);
+        console.log('=== STORE ACTIONS COMPLETED ===');
 
         console.log('Data loaded successfully.');
+        
+        // Log amounts after data is loaded with detailed analysis
+        console.log('=== POST-LOAD ANALYSIS ===');
+        console.log('Store Purchase Amount (from GET_PURCHASE_AMOUNT):', this.PurchaseAmount);
+        console.log('Store Sales Amount (from GET_SALES_AMOUNT):', this.SaleTotalAmount);
+        console.log('Purchase Data (from GET_PURCHASE_LISTS):', this.PurchaseData);
+        console.log('Sales Data (from GET_SALE_LIST):', this.SlaeList);
+        
+        // Show the difference
+        const calculatedAmount = this.purchaseAmount;
+        console.log('🔍 AMOUNT COMPARISON:');
+        console.log('   Store Amount:', this.PurchaseAmount);
+        console.log('   Calculated from PurchaseData:', calculatedAmount);
+        console.log('   Difference:', this.PurchaseAmount - calculatedAmount);
+        console.log('=== END POST-LOAD ANALYSIS ===');
 
         setTimeout(() => {
           this.debugVATData();
@@ -383,13 +482,49 @@ export default defineComponent({
     },
 
     debugVATData() {
-      console.log('=== VAT DATA DEBUG ===');
-      console.log('Purchase Data:', JSON.stringify(this.PurchaseData, null, 2));
+      console.log('=== VAT AND AMOUNT DATA DEBUG ===');
+      
+      // Show the data source difference analysis
+      console.log('🔍 DATA SOURCE ANALYSIS:');
+      console.log('1. Store PurchaseAmount (from GET_PURCHASE_AMOUNT API):', this.PurchaseAmount);
+      console.log('2. PurchaseData (from GET_PURCHASE_LISTS API):', this.PurchaseData);
+      
+      // Raw data logs
+      console.log('Purchase Data (detailed):', JSON.stringify(this.PurchaseData, null, 2));
       console.log('Sales Data (SaleList):', JSON.stringify(this.SlaeList, null, 2));
-      console.log('Calculated Purchase VAT:', this.purchaseVAT);
-      console.log('Calculated Sales VAT:', this.salesVAT);
-      console.log('Calculated Total VAT:', this.totalVAT);
-      console.log('=== END VAT DATA DEBUG ===');
+      
+      // Amount comparison
+      const calculatedAmount = this.purchaseAmount;
+      console.log('💰 AMOUNT COMPARISON:');
+      console.log('   Store Purchase Amount (GET_PURCHASE_AMOUNT):', this.PurchaseAmount);
+      console.log('   Calculated Purchase Amount (from PurchaseData):', calculatedAmount);
+      console.log('   Difference:', this.PurchaseAmount - calculatedAmount);
+      console.log('   Store Sales Amount:', this.SaleTotalAmount);
+      
+      // Check if PurchaseAmount comes from a different time period or includes different data
+      console.log('🔍 POSSIBLE REASONS FOR DIFFERENCE:');
+      console.log('   - GET_PURCHASE_AMOUNT might include ALL purchases (not just current period)');
+      console.log('   - GET_PURCHASE_LISTS might be filtered by date/period');
+      console.log('   - Different APIs might have different business logic');
+      console.log('   - PurchaseAmount might include additional fees/taxes not in individual items');
+      
+      // VAT calculations
+      console.log('📊 VAT CALCULATIONS:');
+      console.log('   Total Purchase VAT:', this.purchaseVAT);
+      console.log('   Total Sales VAT:', this.salesVAT);
+      console.log('   Total VAT (Sales - Purchase):', this.totalVAT);
+      
+      // Formatted amounts for display
+      console.log('📋 FORMATTED DISPLAY VALUES:');
+      console.log('   Formatted Purchase Amount:', this.formatAmount(this.PurchaseAmount));
+      console.log('   Formatted Sales Amount:', this.formatAmount(this.SaleTotalAmount));
+      console.log('   Formatted Total VAT:', this.formatAmount(this.totalVAT));
+      
+      // Call the detailed purchase amount calculation
+      console.log('🔧 TRIGGERING DETAILED CALCULATIONS:');
+      this.purchaseAmount;
+      
+      console.log('=== END VAT AND AMOUNT DATA DEBUG ===');
     },
 
     async initializeApp() {
@@ -465,11 +600,41 @@ export default defineComponent({
       console.log('showCompanySelector changed (watched):', newVal);
       console.log('FAB visibility (showFabButtons):', this.showFabButtons);
     },
+    
+    // Watch for changes in amounts and VAT calculations
+    PurchaseAmount(newVal) {
+      console.log('Purchase Amount changed:', newVal);
+      console.log('Triggering step-by-step purchase amount calculation:');
+      this.purchaseAmount; // Trigger the detailed calculation
+    },
+    SaleTotalAmount(newVal) {
+      console.log('Sales Amount changed:', newVal);
+    },
+    purchaseVAT(newVal) {
+      console.log('Purchase VAT recalculated:', newVal);
+    },
+    salesVAT(newVal) {
+      console.log('Sales VAT recalculated:', newVal);
+    },
+    totalVAT(newVal) {
+      console.log('Total VAT recalculated:', newVal);
+    },
+    PurchaseData: {
+      handler(newVal) {
+        console.log('=== PURCHASE DATA CHANGED ===');
+        console.log('New Purchase Data:', newVal);
+        console.log('Triggering detailed purchase calculations...');
+        // Trigger recalculations
+        setTimeout(() => {
+          this.purchaseAmount;
+          this.purchaseVAT;
+        }, 100);
+      },
+      deep: true
+    },
   },
 });
 </script>
-
-
 <style scoped>
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
