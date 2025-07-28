@@ -36,6 +36,13 @@
         </ion-popover>
       </ion-item>
 
+      <div class="ion-padding-horizontal ion-margin-bottom">
+        <ion-button expand="block" fill="outline" @click="resetDateFilter" class="reset-filter-button">
+          <ion-icon :icon="refreshOutline" slot="start"></ion-icon>
+          Reset Date Filter
+        </ion-button>
+      </div>
+
       <h2 class="selected-day">{{ formattedDateRangeDisplay }}</h2>
       <ion-segment :value="selectedSegment" class="segment-container">
         <ion-segment-button value="overview" @click="selectedSegment = 'overview'">
@@ -110,11 +117,11 @@
                   </div>
                   <div class="info-item">
                     <ion-icon :icon="pricetagOutline" class="detail-icon"></ion-icon>
-                    <span>Category: {{ getCategoryName(purchase.categoryId) || 'N/A' }}</span>
+                    <span>Category: {{ getCategoryName(purchase.categoryId, purchase) || 'N/A' }}</span>
                   </div>
                   <div class="info-item" v-if="purchase.subcategoryId">
                     <ion-icon :icon="pricetagsOutline" class="detail-icon"></ion-icon>
-                    <span>Subcategory: {{ getSubcategoryName(purchase.subcategoryId) || 'N/A' }}</span>
+                    <span>Subcategory: {{ getSubcategoryName(purchase.subcategoryId, purchase) || 'N/A' }}</span>
                   </div>
                   <div class="info-item amount">
                     <ion-icon :icon="walletOutline" class="detail-icon"></ion-icon>
@@ -155,6 +162,10 @@
                     <div class="info-item">
                       <ion-icon :icon="calendarNumberOutline" class="detail-icon"></ion-icon>
                       <span>Date: {{ formatDate(item.date) }}</span>
+                    </div>
+                    <div class="info-item">
+                      <ion-icon :icon="pricetagOutline" class="detail-icon"></ion-icon>
+                      <span>Sale Type: {{ getSaleTypeName(item.saleTypeId) || 'N/A' }}</span>
                     </div>
                     <div class="info-item amount">
                       <ion-icon :icon="walletOutline" class="detail-icon"></ion-icon>
@@ -233,11 +244,11 @@
             </ion-item>
             <ion-item>
               <ion-label>Category:</ion-label>
-              <ion-text>{{ getCategoryName(selectedPurchaseForDetail.categoryId) || 'N/A' }}</ion-text>
+              <ion-text>{{ getCategoryName(selectedPurchaseForDetail.categoryId, selectedPurchaseForDetail) || 'N/A' }}</ion-text>
             </ion-item>
             <ion-item>
               <ion-label>Subcategory:</ion-label>
-              <ion-text>{{ getSubcategoryName(selectedPurchaseForDetail.subcategoryId) || 'N/A' }}</ion-text>
+              <ion-text>{{ getSubcategoryName(selectedPurchaseForDetail.subcategoryId, selectedPurchaseForDetail) || 'N/A' }}</ion-text>
             </ion-item>
             <ion-item>
               <ion-label>Tax Type:</ion-label>
@@ -381,116 +392,123 @@
         </ion-content>
       </ion-modal>
 
-      <ion-modal :is-open="showEditPurchaseDataModal" @didDismiss="closeEditPurchaseDataModal" ion-color-scheme="light" class="light-theme">
-        <ion-header>
-          <ion-toolbar>
-            <ion-title style="color: black;">Edit Purchase Data</ion-title>
-            <ion-buttons slot="end">
-              <ion-button @click="closeEditPurchaseDataModal">
-                <ion-icon :icon="close"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-        <ion-content class="ion-padding">
-          <ion-item>
-            <ion-label position="stacked">Date</ion-label>
-            <ion-input type="date" v-model="editPurchaseForm.date"></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Company</ion-label>
-            <ion-select v-model="editPurchaseForm.companyId">
-              <ion-select-option
-                v-for="company in CompanyList"
-                :key="company.id"
-                :value="company.id"
-              >
-                {{ company.name }}
-              </ion-select-option>
-            </ion-select>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Category</ion-label>
-            <div class="select-with-actions">
-              <ion-select v-model="editPurchaseForm.categoryId" placeholder="Select Category">
-                <ion-select-option v-for="category in categories" :key="category.id" :value="category.id">
-                  {{ category.cat_name }}
-                </ion-select-option>
-              </ion-select>
-              <ion-button fill="clear" @click="openAddCategoryModal" class="action-button">
-                <ion-icon :icon="add"></ion-icon>
-              </ion-button>
-              <ion-button fill="clear" @click="openEditCategoryModal" class="action-button">
-                <ion-icon :icon="create"></ion-icon>
-              </ion-button>
-              <ion-button fill="clear" @click="confirmDeleteCategory" class="action-button">
-                <ion-icon :icon="trash"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Subcategory</ion-label>
-            <div class="select-with-actions">
-              <ion-select v-model="editPurchaseForm.subcategoryId" placeholder="Select Subcategory">
-                <ion-select-option v-for="subcategory in filteredSubcategories" :key="subcategory.id" :value="subcategory.id">
-                  {{ subcategory.sub_name }}
-                </ion-select-option>
-              </ion-select>
-              <ion-button fill="clear" @click="openAddSubcategoryModal" class="action-button">
-                <ion-icon :icon="add"></ion-icon>
-              </ion-button>
-              <ion-button fill="clear" @click="openEditSubcategoryModal" class="action-button">
-                <ion-icon :icon="create"></ion-icon>
-              </ion-button>
-              <ion-button fill="clear" @click="confirmDeleteSubcategory" class="action-button">
-                <ion-icon :icon="trash"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-item>
-
-          <ion-list>
-            <ion-radio-group v-model="editPurchaseForm.taxType">
-              <ion-list-header><ion-label>Tax Type</ion-label></ion-list-header>
-              <ion-item>
-                <ion-label>Inclusive</ion-label>
-                <ion-radio slot="start" value="inclusive"></ion-radio>
-              </ion-item>
-              <ion-item>
-                <ion-label>Exclusive</ion-label>
-                <ion-radio slot="start" value="exclusive"></ion-radio>
-              </ion-item>
-              <ion-item>
-                <ion-label>Zero Tax</ion-label>
-                <ion-radio slot="start" value="zero_tax"></ion-radio>
-              </ion-item>
-            </ion-radio-group>
-          </ion-list>
-
-          <ion-item>
-            <ion-label position="stacked">Amount</ion-label>
-            <ion-input
-              type="number"
-              v-model="editPurchaseForm.amount"
-              placeholder="Enter purchase amount"
-              @ionInput="calculatePurchaseTaxEdit"
-            ></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Purchase Tax Amount</ion-label>
-            <ion-input
-              type="number"
-              :value="calculatedPurchaseTaxEdit"
-              readonly
-            ></ion-input>
-          </ion-item>
-          <ion-button expand="block"
-            @click="submitEditPurchaseDataForm"
-            class="update-button"
-            color="primary">
-            Update Purchase Data
+    <ion-modal
+    :is-open="showEditPurchaseDataModal"
+    @didDismiss="closeEditPurchaseDataModal"
+    @ionModalDidDismiss="closeEditPurchaseDataModal"
+    ion-color-scheme="light"
+    class="light-theme"
+    :backdrop-dismiss="true"
+    :show-backdrop="true">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title style="color: black;">Edit Purchase Data</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="closeEditPurchaseDataModal">
+            <ion-icon :icon="close"></ion-icon>
           </ion-button>
-        </ion-content>
-      </ion-modal>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <ion-item>
+        <ion-label position="stacked">Date</ion-label>
+        <ion-input type="date" v-model="editPurchaseForm.date"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Company</ion-label>
+        <ion-select v-model="editPurchaseForm.companyId">
+          <ion-select-option
+            v-for="company in CompanyList"
+            :key="company.id"
+            :value="company.id"
+          >
+            {{ company.name }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Category</ion-label>
+        <div class="select-with-actions">
+          <ion-select v-model="editPurchaseForm.categoryId" placeholder="Select Category">
+            <ion-select-option v-for="category in categories" :key="category.id" :value="category.id">
+              {{ category.cat_name }}
+            </ion-select-option>
+          </ion-select>
+          <ion-button fill="clear" @click="openAddCategoryModal" class="action-button">
+            <ion-icon :icon="add"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" @click="openEditCategoryModal" class="action-button">
+            <ion-icon :icon="create"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" @click="confirmDeleteCategory" class="action-button">
+            <ion-icon :icon="trash"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Subcategory</ion-label>
+        <div class="select-with-actions">
+          <ion-select v-model="editPurchaseForm.subcategoryId" placeholder="Select Subcategory">
+            <ion-select-option v-for="subcategory in filteredSubcategories" :key="subcategory.id" :value="subcategory.id">
+              {{ subcategory.sub_name }}
+            </ion-select-option>
+          </ion-select>
+          <ion-button fill="clear" @click="openAddSubcategoryModal" class="action-button">
+            <ion-icon :icon="add"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" @click="openEditSubcategoryModal" class="action-button">
+            <ion-icon :icon="create"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" @click="confirmDeleteSubcategory" class="action-button">
+            <ion-icon :icon="trash"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-item>
+
+      <ion-list>
+        <ion-radio-group v-model="editPurchaseForm.taxType">
+          <ion-list-header><ion-label>Tax Type</ion-label></ion-list-header>
+          <ion-item>
+            <ion-label>Inclusive</ion-label>
+            <ion-radio slot="start" value="inclusive"></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>Exclusive</ion-label>
+            <ion-radio slot="start" value="exclusive"></ion-radio>
+          </ion-item>
+          <ion-item>
+            <ion-label>Zero Tax</ion-label>
+            <ion-radio slot="start" value="zero_tax"></ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+
+      <ion-item>
+        <ion-label position="stacked">Amount</ion-label>
+        <ion-input
+          type="number"
+          v-model="editPurchaseForm.amount"
+          placeholder="Enter purchase amount"
+          @ionInput="calculatePurchaseTaxEdit"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Purchase Tax Amount</ion-label>
+        <ion-input
+          type="number"
+          :value="calculatedPurchaseTaxEdit"
+          readonly
+        ></ion-input>
+      </ion-item>
+      <ion-button expand="block"
+        @click="submitEditPurchaseDataForm"
+        class="update-button"
+        color="primary">
+        Update Purchase Data
+      </ion-button>
+    </ion-content>
+</ion-modal>
 
       <ion-alert
         :is-open="showDeleteAlert"
@@ -681,77 +699,177 @@
         </ion-content>
       </ion-modal>
 
-      <ion-modal :is-open="showUpdateSaleModal" @didDismiss="showUpdateSaleModal = false" ion-color-scheme="light" class="light-theme">
-        <ion-header>
-          <ion-toolbar>
-            <ion-title style="color: black;">Update Sale</ion-title>
-            <ion-buttons slot="end">
-              <ion-button @click="showUpdateSaleModal = false">
-                <ion-icon :icon="close"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-        <ion-content class="ion-padding">
-          <ion-item>
-            <ion-label position="stacked">Date</ion-label>
-            <ion-input type="date" v-model="selectedSaleItem.date"></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Company</ion-label>
-            <ion-select v-model="selectedSaleItem.companyId">
-              <ion-select-option v-for="company in CompanyList" :key="company.id" :value="company.id">
-                {{ company.name }}
-              </ion-select-option>
-            </ion-select>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Amount</ion-label>
-            <ion-input v-model="selectedSaleItem.amount" type="number" @ionChange="updateSaleTaxAmount"></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Sale Tax Amount</ion-label>
-            <ion-input v-model="selectedSaleItem.sale_tax_amount" readonly></ion-input>
-          </ion-item>
-          <ion-button expand="block" @click="updateSale" class="update-button" color="primary">Update Sale</ion-button>
-        </ion-content>
-      </ion-modal>
+    <ion-modal
+    :is-open="showAddSaleModal"
+    @didDismiss="showAddSaleModal = false"
+    ion-color-scheme="light"
+    class="light-theme">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title style="color: black;">Add New Sale</ion-title>
+          <ion-buttons slot="end">
+            <ion-button @click="showAddSaleModal = false">
+              <ion-icon :icon="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <ion-item>
+          <ion-label position="stacked">Date</ion-label>
+          <ion-input v-model="newSale.date" readonly></ion-input>
+        </ion-item>
 
-      <ion-modal :is-open="showAddSaleModal" @didDismiss="showAddSaleModal = false" ion-color-scheme="light" class="light-theme">
-        <ion-header>
-          <ion-toolbar>
-            <ion-title style="color: black;">Add New Sale</ion-title>
-            <ion-buttons slot="end">
-              <ion-button @click="showAddSaleModal = false">
-                <ion-icon :icon="close"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-        <ion-content class="ion-padding">
-          <ion-item>
-            <ion-label position="stacked">Date</ion-label>
-            <ion-input v-model="newSale.date" readonly></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Amount</ion-label>
-            <ion-input v-model="newSale.amount" type="number" @ionChange="updateNewSaleTaxAmount"></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Company</ion-label>
-            <ion-select v-model="newSale.companyId">
-              <ion-select-option v-for="company in CompanyList" :key="company.id" :value="company.id">
-                {{ company.name }}
+        <ion-item>
+          <ion-label position="stacked">Company</ion-label>
+          <ion-select v-model="newSale.companyId">
+            <ion-select-option v-for="company in CompanyList" :key="company.id" :value="company.id">
+              {{ company.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Sale Type</ion-label>
+          <div class="select-with-actions">
+            <ion-select v-model="newSale.saleTypeId" placeholder="Select Sale Type">
+              <ion-select-option v-for="saleType in saleTypes" :key="saleType.id" :value="saleType.id">
+                {{ saleType.saletype }}
               </ion-select-option>
             </ion-select>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Sale Tax Amount</ion-label>
-            <ion-input v-model="newSale.sale_tax_amount" readonly></ion-input>
-          </ion-item>
-          <ion-button expand="block" @click="submitAddSaleForm" class="upload-button" color="primary">Add Sale</ion-button>
-        </ion-content>
-      </ion-modal>
+            <ion-button fill="clear" @click="openAddSaleTypeModal" class="action-button">
+              <ion-icon :icon="add"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" @click="openEditSaleTypeModal" class="action-button">
+              <ion-icon :icon="create"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" @click="confirmDeleteSaleType" class="action-button">
+              <ion-icon :icon="trash"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Amount</ion-label>
+          <ion-input v-model="newSale.amount" type="number" @ionChange="updateNewSaleTaxAmount"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Sale Tax Amount</ion-label>
+          <ion-input v-model="newSale.sale_tax_amount" readonly></ion-input>
+        </ion-item>
+
+        <ion-button expand="block" @click="submitAddSaleForm" class="upload-button" color="primary">
+          Add Sale
+        </ion-button>
+      </ion-content>
+    </ion-modal>
+
+<ion-modal :is-open="showUpdateSaleModal" @didDismiss="showUpdateSaleModal = false" ion-color-scheme="light" class="light-theme">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title style="color: black;">Update Sale</ion-title>
+      <ion-buttons slot="end">
+        <ion-button @click="showUpdateSaleModal = false">
+          <ion-icon :icon="close"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content class="ion-padding">
+    <ion-item>
+      <ion-label position="stacked">Date</ion-label>
+      <ion-input type="date" v-model="selectedSaleItem.date"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Company</ion-label>
+      <ion-select v-model="selectedSaleItem.companyId">
+        <ion-select-option v-for="company in CompanyList" :key="company.id" :value="company.id">
+          {{ company.name }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Sale Type</ion-label>
+      <div class="select-with-actions">
+        <ion-select v-model="selectedSaleItem.saleTypeId" placeholder="Select Sale Type">
+          <ion-select-option v-for="saleType in saleTypes" :key="saleType.id" :value="saleType.id">
+            {{ saleType.saletype }}
+          </ion-select-option>
+        </ion-select>
+        <ion-button fill="clear" @click="openAddSaleTypeModal" class="action-button">
+          <ion-icon :icon="add"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" @click="openEditSaleTypeModal" class="action-button">
+          <ion-icon :icon="create"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" @click="confirmDeleteSaleType" class="action-button">
+          <ion-icon :icon="trash"></ion-icon>
+        </ion-button>
+      </div>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Amount</ion-label>
+      <ion-input v-model="selectedSaleItem.amount" type="number" @ionChange="updateSaleTaxAmount"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Sale Tax Amount</ion-label>
+      <ion-input v-model="selectedSaleItem.sale_tax_amount" readonly></ion-input>
+    </ion-item>
+
+    <ion-button expand="block" @click="updateSale" class="update-button" color="primary">
+      Update Sale
+    </ion-button>
+  </ion-content>
+</ion-modal>
+
+<ion-modal :is-open="showAddSaleTypeModal" @didDismiss="closeAddSaleTypeModal" ion-color-scheme="light" class="light-theme">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title style="color: black;">Add Sale Type</ion-title>
+      <ion-buttons slot="end">
+        <ion-button @click="closeAddSaleTypeModal">
+          <ion-icon :icon="close"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content class="ion-padding">
+    <ion-item>
+      <ion-label position="stacked">Sale Type Name</ion-label>
+      <ion-input v-model="addSaleTypeForm.saletype" placeholder="Enter sale type name"></ion-input>
+    </ion-item>
+    <ion-button expand="block" @click="submitAddSaleTypeForm" class="submit-button" color="primary">
+      Add Sale Type
+    </ion-button>
+  </ion-content>
+</ion-modal>
+
+<ion-modal :is-open="showEditSaleTypeModal" @didDismiss="closeEditSaleTypeModal" ion-color-scheme="light" class="light-theme">
+  <ion-header>
+    <ion-toolbar>
+      <ion-title style="color: black;">Edit Sale Type</ion-title>
+      <ion-buttons slot="end">
+        <ion-button @click="closeEditSaleTypeModal">
+          <ion-icon :icon="close"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content class="ion-padding">
+    <ion-item>
+      <ion-label position="stacked">Sale Type Name</ion-label>
+      <ion-input v-model="editSaleTypeForm.saletype" placeholder="Enter new sale type name"></ion-input>
+    </ion-item>
+    <ion-button expand="block" @click="submitEditSaleTypeForm" class="update-button" color="primary">
+      Update Sale Type
+    </ion-button>
+  </ion-content>
+</ion-modal>
 
       <ion-modal :is-open="showAddCategoryModal" @didDismiss="closeAddCategoryModal" ion-color-scheme="light" class="light-theme">
         <ion-header>
@@ -902,7 +1020,7 @@ import {
 import {
   storefrontOutline, calendarNumberOutline, walletOutline, receiptOutline,
   add, ellipsisVertical, cart, cash, cloudUpload, closeCircle, close, create, trash,
-  eyeOutline, timeOutline, pricetagOutline, pricetagsOutline
+  eyeOutline, timeOutline, pricetagOutline, pricetagsOutline, refreshOutline
 } from 'ionicons/icons';
 import { mapActions, mapState, mapGetters } from 'vuex';
 import { parseISO, addMonths, isWithinInterval, startOfDay, endOfDay, format, startOfMonth, endOfMonth, isSameDay, isSameMonth } from "date-fns";
@@ -922,13 +1040,13 @@ export default defineComponent({
     return {
       selectedFromDateInternal: null,
       selectedToDateInternal: null,
+      showEditPurchaseDataModal: false,
       selectedPurchase: null,
       showPurchasePopover: false,
       purchasePopoverEvent: null,
       showAddPurchaseModal: false,
 
       addPurchaseForm: {
-        // expense_type: "", // Removed
         date: "",
         companyId: "",
         amount: "",
@@ -940,7 +1058,6 @@ export default defineComponent({
       },
       editPurchaseForm: {
         id: null,
-        // expense_type: "", // Removed
         date: "",
         companyId: "",
         amount: "",
@@ -953,7 +1070,6 @@ export default defineComponent({
       calculatedPurchaseTax: 0,
       calculatedPurchaseTaxEdit: 0,
 
-      // Category and Subcategory Management
       showAddCategoryModal: false,
       addCategoryForm: {
         cat_name: ""
@@ -982,16 +1098,15 @@ export default defineComponent({
 
       showDeletePurchaseDataAlert: false,
       purchaseDataToDeleteId: null,
-      
+
       taxFilterType: "day",
-      vatRate: 5, // Common VAT rate for both sales and purchases
+      vatRate: 5,
       showDetailedPurchaseModal: false,
       selectedPurchaseForDetail: null,
       imagesForDetailedPurchase: [],
       expandedPurchaseId: null,
       selectedSegment: "overview",
 
-      // Sales-specific reactive properties from original SalesPage
       searchQuery: '',
       showSalePopover: false,
       salePopoverEvent: null,
@@ -1002,19 +1117,33 @@ export default defineComponent({
       newSale: {
         date: '',
         companyId: '',
+        saleTypeId: null, // Added saleTypeId
         amount: null,
         sale_tax_amount: null
       },
 
-      updateForm: { // For bill image update
+      updateForm: {
         id: null,
         date: "",
         companyId: "",
         image: null,
         imageUrl: "",
       },
-      showUpdateModal: false, // For bill image update
-      showDeleteAlert: false, // For bill image delete
+      showUpdateModal: false,
+      showDeleteAlert: false,
+
+      // New data properties for Sale Types
+      showAddSaleTypeModal: false,
+      addSaleTypeForm: {
+        saletype: ""
+      },
+      showEditSaleTypeModal: false,
+      editSaleTypeForm: {
+        id: null,
+        saletype: ""
+      },
+      showDeleteSaleTypeAlert: false,
+      saleTypeToDeleteId: null,
     };
   },
   setup() {
@@ -1031,7 +1160,7 @@ export default defineComponent({
     const showPopover = ref(false);
     const popoverEvent = ref(null);
     const selectedImage = ref(null);
-    
+
 
     const fileInput = ref(null);
     const updateFileInput = ref(null);
@@ -1067,7 +1196,7 @@ export default defineComponent({
         image.value = files[0];
         previewImage.value = URL.createObjectURL(files[0]);
       } else {
-        console.error("No files selected or invalid event structure");
+        // console.error("No files selected or invalid event structure");
       }
     };
     const onFileChange = (event) => {
@@ -1081,7 +1210,7 @@ export default defineComponent({
         image.value = files[0];
         previewImage.value = URL.createObjectURL(files[0]);
       } else {
-        console.error("No files selected or invalid event structure");
+        // console.error("No files selected or invalid event structure");
       }
     };
     const removePreviewImage = () => {
@@ -1090,7 +1219,7 @@ export default defineComponent({
       if (fileInput.value) fileInput.value.value = "";
       if (updateFileInput.value) updateFileInput.value.value = "";
     };
-    
+
     return {
       companyId,
       companyName,
@@ -1128,7 +1257,8 @@ export default defineComponent({
       receiptOutline,
       timeOutline,
       pricetagOutline,
-      pricetagsOutline
+      pricetagsOutline,
+      refreshOutline
     };
   },
   computed: {
@@ -1136,15 +1266,21 @@ export default defineComponent({
     ...mapState("company", ["CompanyList"]),
     ...mapState("purchase", ["PurchaseData"]),
     ...mapState("sales", ["SlaeList"]),
+    ...mapState("salestypes", ["SaleTypeList"]), // Map SaleTypeList from SaleType module
     ...mapGetters("categories", ["categories", "getCategoryById"]),
     ...mapGetters("subcategories", ["subcategories", "getSubcategoryById"]),
-    // Assuming you have a taxTypes module similar to categories/subcategories
-    // If not, you'd handle tax types directly in the component using a local array.
-    // ...mapGetters("taxTypes", ["taxTypes", "getTaxTypeById"]),
 
-    // Filter subcategories based on the selected category
+    saleTypes() { // New computed property for sale types
+      return this.SaleTypeList.data || [];
+    },
+    getSaleTypeName() { // New getter for sale type name
+      return (saleTypeId) => {
+        const saleType = this.saleTypes.find(st => st.id === saleTypeId);
+        return saleType ? saleType.saletype : 'N/A';
+      };
+    },
+
     filteredSubcategories() {
-      // Determine the category ID based on which modal is open
       const selectedCategoryId = this.showAddPurchaseModal
         ? this.addPurchaseForm.categoryId
         : this.showEditPurchaseDataModal
@@ -1152,9 +1288,10 @@ export default defineComponent({
           : null;
 
       if (!selectedCategoryId) {
-        return []; // No category selected, so no subcategories to filter
+        return [];
       }
-      return this.subcategories.filter(sub => sub.categoryId === selectedCategoryId);
+      const filtered = this.subcategories.filter(sub => sub.categoryId === selectedCategoryId);
+      return filtered;
     },
 
     formattedFromDateDisplay() {
@@ -1184,17 +1321,21 @@ export default defineComponent({
     },
 
     filteredPurchaseData() {
-      if (!this.PurchaseData || !this.PurchaseData.data) return [];
+      if (!this.PurchaseData || !this.PurchaseData.data) {
+        return [];
+      }
 
       const fromDate = this.selectedFromDateInternal ? startOfDay(this.selectedFromDateInternal) : null;
       const toDate = this.selectedToDateInternal ? endOfDay(this.selectedToDateInternal) : null;
 
-      return this.PurchaseData.data.filter((purchase) => {
-        if (!purchase.date) return false;
+      const filtered = this.PurchaseData.data.filter((purchase) => {
+        if (!purchase.date) {
+          return false;
+        }
         const purchaseDate = parseISO(purchase.date);
 
         const matchesCompany = purchase.companyId?.toString() === this.companyId?.toString();
-        
+
         let matchesDateRange = true;
         if (fromDate && toDate) {
           matchesDateRange = isWithinInterval(purchaseDate, { start: fromDate, end: toDate });
@@ -1203,9 +1344,16 @@ export default defineComponent({
         } else if (toDate) {
           matchesDateRange = isSameDay(purchaseDate, toDate);
         }
-
         return matchesCompany && matchesDateRange;
+      }).map(purchase => { // Add this .map() to convert string numbers to actual numbers
+        return {
+          ...purchase,
+          // Ensure amount and purchase_tax_amount are numbers
+          amount: parseFloat(purchase.amount) || 0,
+          purchase_tax_amount: parseFloat(purchase.purchase_tax_amount) || 0
+        };
       });
+      return filtered;
     },
 
     filteredSales() {
@@ -1216,7 +1364,7 @@ export default defineComponent({
       const fromDate = this.selectedFromDateInternal ? startOfDay(this.selectedFromDateInternal) : null;
       const toDate = this.selectedToDateInternal ? endOfDay(this.selectedToDateInternal) : null;
 
-      return this.SlaeList.data.filter(item => {
+      const filtered = this.SlaeList.data.filter(item => {
         const matchesCompany = !this.companyId || (item.company && item.company.id?.toString() === this.companyId?.toString());
         const salesDate = parseISO(item.date);
 
@@ -1236,26 +1384,32 @@ export default defineComponent({
           : true;
         return matchesCompany && matchesDateRange && matchesSearch;
       });
+      return filtered;
     },
 
     isDataLoaded() {
-      return (
+      const loaded = (
         this.PurchaseList && this.PurchaseList.data &&
         this.PurchaseData && this.PurchaseData.data &&
         this.SlaeList && this.SlaeList.data &&
         this.CompanyList && this.CompanyList.length > 0 &&
         this.categories && this.categories.length > 0 &&
-        this.subcategories && this.subcategories.length > 0
+        this.subcategories && this.subcategories.length > 0 &&
+        this.SaleTypeList && this.SaleTypeList.data // Check if SaleTypeList is loaded
       );
+      return loaded;
     },
 
     currentCompany() {
-      return this.CompanyList.find(
+      const company = this.CompanyList.find(
         (company) => company.id?.toString() === this.companyId?.toString()
       );
+      return company;
     },
     currentPeriod() {
-      if (!this.currentCompany || !this.currentCompany.ved || !this.selectedFromDateInternal) return null;
+      if (!this.currentCompany || !this.currentCompany.ved || !this.selectedFromDateInternal) {
+        return null;
+      }
       const vedDate = startOfDay(parseISO(this.currentCompany.ved));
       const now = this.selectedFromDateInternal;
       const monthsSinceVed = Math.floor(
@@ -1264,16 +1418,18 @@ export default defineComponent({
       const periodNumber = Math.floor(monthsSinceVed / 3);
       const periodStart = addMonths(vedDate, periodNumber * 3);
       const periodEnd = endOfDay(addMonths(periodStart, 3));
-      return { start: periodStart, end: periodEnd };
+      const period = { start: periodStart, end: periodEnd };
+      return period;
     },
     currentDate() {
       return this.selectedFromDateInternal;
     },
     currentMonth() {
-      return {
+      const month = {
         start: startOfMonth(this.currentDate),
         end: endOfMonth(this.currentDate)
       };
+      return month;
     },
     currentMonthFormatted() {
       return this.selectedFromDateInternal ? format(this.selectedFromDateInternal, "MMMM yyyy") : 'N/A';
@@ -1281,7 +1437,7 @@ export default defineComponent({
 
     dayPurchaseTax() {
       if (!this.PurchaseData || !this.PurchaseData.data || !this.selectedFromDateInternal) return 0;
-      return this.PurchaseData.data
+      const tax = this.PurchaseData.data
         .filter((purchase) => {
           const purchaseDate = parseISO(purchase.date);
           return (
@@ -1290,10 +1446,11 @@ export default defineComponent({
           );
         })
         .reduce((total, purchase) => total + (parseFloat(purchase.purchase_tax_amount) || 0), 0);
+      return tax;
     },
     monthPurchaseTax() {
       if (!this.PurchaseData || !this.PurchaseData.data || !this.selectedFromDateInternal) return 0;
-      return this.PurchaseData.data
+      const tax = this.PurchaseData.data
         .filter((purchase) => {
           const purchaseDate = parseISO(purchase.date);
           return (
@@ -1302,10 +1459,11 @@ export default defineComponent({
           );
         })
         .reduce((total, purchase) => total + (parseFloat(purchase.purchase_tax_amount) || 0), 0);
+      return tax;
     },
     periodPurchaseTax() {
       if (!this.PurchaseData || !this.PurchaseData.data || !this.currentPeriod) return 0;
-      return this.PurchaseData.data
+      const tax = this.PurchaseData.data
         .filter((purchase) => {
           const purchaseDate = parseISO(purchase.date);
           return (
@@ -1314,11 +1472,12 @@ export default defineComponent({
           );
         })
         .reduce((total, purchase) => total + (parseFloat(purchase.purchase_tax_amount) || 0), 0);
+      return tax;
     },
 
     daySalesTax() {
       if (!this.SlaeList || !this.SlaeList.data || !this.selectedFromDateInternal) return 0;
-      return this.SlaeList.data
+      const tax = this.SlaeList.data
         .filter((sale) => {
           const saleDate = parseISO(sale.date);
           return (
@@ -1330,10 +1489,11 @@ export default defineComponent({
           const taxAmount = parseFloat(sale.sale_tax_amount) || 0;
           return total + taxAmount;
         }, 0);
+      return tax;
     },
     monthSalesTax() {
       if (!this.SlaeList || !this.SlaeList.data || !this.selectedFromDateInternal) return 0;
-      return this.SlaeList.data
+      const tax = this.SlaeList.data
         .filter((sale) => {
           const saleDate = parseISO(sale.date);
           return (
@@ -1345,10 +1505,11 @@ export default defineComponent({
           const taxAmount = parseFloat(sale.sale_tax_amount) || 0;
           return total + taxAmount;
         }, 0);
+      return tax;
     },
     periodSalesTax() {
       if (!this.SlaeList || !this.SlaeList.data || !this.currentPeriod) return 0;
-      return this.SlaeList.data
+      const tax = this.SlaeList.data
         .filter((sale) => {
           const saleDate = parseISO(sale.date);
           return (
@@ -1360,6 +1521,7 @@ export default defineComponent({
           const taxAmount = parseFloat(sale.sale_tax_amount) || 0;
           return total + taxAmount;
         }, 0);
+      return tax;
     },
 
     displayPurchaseTax() {
@@ -1433,7 +1595,8 @@ export default defineComponent({
             return matchesCompany && matchesDateRange;
           });
       }
-      return purchasesToSum.reduce((total, purchase) => total + (parseFloat(purchase.amount) || 0), 0);
+      const total = purchasesToSum.reduce((total, purchase) => total + (parseFloat(purchase.amount) || 0), 0);
+      return total;
     },
 
     totalSalesAmount() {
@@ -1476,7 +1639,8 @@ export default defineComponent({
             return matchesCompany && matchesDateRange;
           });
       }
-      return salesToSum.reduce((total, sale) => total + (parseFloat(sale.amount) || 0), 0);
+      const total = salesToSum.reduce((total, sale) => total + (parseFloat(sale.amount) || 0), 0);
+      return total;
     },
 
     displayTotalPurchaseAmount() {
@@ -1518,7 +1682,7 @@ export default defineComponent({
     ...mapActions("sales", ["GET_SALE_LIST", "CREATE_SALES", "UPDATE_SALES", "DELETE_SALES"]),
     ...mapActions("categories", ["GET_CATEGORY_LIST", "CREATE_CATEGORY", "UPDATE_CATEGORY", "DELETE_CATEGORY"]),
     ...mapActions("subcategories", ["GET_SUBCATEGORY_LIST", "CREATE_SUBCATEGORY", "UPDATE_SUBCATEGORY", "DELETE_SUBCATEGORY"]),
-    // ...mapActions("taxTypes", ["GET_TAX_TYPE_LIST", "CREATE_TAX_TYPE", "UPDATE_TAX_TYPE", "DELETE_TAX_TYPE"]),
+    ...mapActions("salestypes", ["GET_SALETYPE_LIST", "CREATE_SALETYPE", "UPDATE_SALETYPE", "DELETE_SALETYPE"]), // Map SaleType actions
 
     handleFabClick() {
       if (this.selectedSegment === 'purchase') {
@@ -1547,21 +1711,46 @@ export default defineComponent({
       const company = this.CompanyList.find(
         (c) => c.id?.toString() === companyId?.toString()
       );
-      return company ? company.name : `Company ${companyId}`;
+      const name = company ? company.name : `Company ${companyId}`;
+      return name;
     },
-    getCategoryName(categoryId) {
-      const category = this.getCategoryById(categoryId);
-      return category ? category.cat_name : 'N/A';
+    getCategoryName(categoryId, purchase = null) {
+      if (categoryId) {
+          const category = this.getCategoryById(categoryId);
+          if (category) {
+              return category.cat_name;
+          }
+      }
+
+      if (purchase) {
+        // Fallback to purchase.subcategory.category if categoryId is not directly present
+        if (purchase.subcategory && purchase.subcategory.category && purchase.subcategory.category.cat_name) {
+          return purchase.subcategory.category.cat_name;
+        }
+        // Fallback to purchase.category if available (for direct category association without subcategory)
+        if (purchase.category && purchase.category.cat_name) {
+          return purchase.category.cat_name;
+        }
+      }
+      return 'N/A';
     },
-    getSubcategoryName(subcategoryId) {
-      const subcategory = this.getSubcategoryById(subcategoryId);
-      return subcategory ? subcategory.sub_name : 'N/A';
+    getSubcategoryName(subcategoryId, purchase = null) {
+      if (subcategoryId) {
+          const subcategory = this.getSubcategoryById(subcategoryId);
+          if (subcategory) {
+              return subcategory.sub_name;
+          }
+      }
+
+      if (purchase) {
+          if (purchase.subcategory && purchase.subcategory.sub_name) {
+              return purchase.subcategory.sub_name;
+          }
+      }
+
+      return 'N/A';
     },
     getTaxTypeName(taxTypeId) {
-      // If you have a taxTypes module:
-      // const taxType = this.getTaxTypeById(taxTypeId);
-      // return taxType ? taxType.type_name : 'N/A';
-      // Otherwise, map IDs to names directly if using fixed values
       switch(taxTypeId) {
         case 1: return 'Inclusive';
         case 2: return 'Exclusive';
@@ -1597,6 +1786,14 @@ export default defineComponent({
       }
     },
 
+    resetDateFilter() {
+      const today = new Date();
+      this.selectedFromDateInternal = today;
+      this.selectedToDateInternal = today;
+      this.loadAllData();
+      this.presentToast('Date filter reset to today.', 'light');
+    },
+
     async loadAllData() {
       try {
         await Promise.all([
@@ -1606,37 +1803,32 @@ export default defineComponent({
           this.GET_CATEGORY_LIST(),
           this.GET_SUBCATEGORY_LIST(),
           this.GET_COMPANY_LIST(),
-          // this.GET_TAX_TYPE_LIST(), // Uncomment if you implement taxTypes module
+          this.GET_SALETYPE_LIST(), // Fetch Sale Types
         ]);
       } catch (error) {
-        console.error("Failed to load data:", error);
         this.presentToast('Failed to load data. Please try again.', 'danger');
       }
     },
-    
-    // Calculates tax for the Add Purchase form
+
     calculatePurchaseTax() {
       const amount = parseFloat(this.addPurchaseForm.amount);
       if (isNaN(amount) || amount < 0) {
         this.calculatedPurchaseTax = 0;
         return;
       }
-      
+
       let taxAmount = 0;
       if (this.addPurchaseForm.taxType === 'exclusive') {
         taxAmount = amount * (this.vatRate / 100);
       } else if (this.addPurchaseForm.taxType === 'inclusive') {
-        // If amount is inclusive, calculate the tax component
-        // Total = Base + Tax (Base * VAT_Rate) => Total = Base * (1 + VAT_Rate)
-        // Base = Total / (1 + VAT_Rate)
-        // Tax = Total - Base = Total - (Total / (1 + VAT_Rate))
-        taxAmount = amount - (amount / (1 + (this.vatRate / 100)));
+        const rate = this.vatRate / 100;
+        // Calculate tax from the total inclusive amount
+        taxAmount = amount * (rate / (1 + rate));
       }
-      // If zero_tax, taxAmount remains 0
+      // Only format for display, the internal number might have more precision
       this.calculatedPurchaseTax = taxAmount.toFixed(2);
     },
 
-    // Calculates tax for the Edit Purchase form
     calculatePurchaseTaxEdit() {
       const amount = parseFloat(this.editPurchaseForm.amount);
       if (isNaN(amount) || amount < 0) {
@@ -1648,41 +1840,49 @@ export default defineComponent({
       if (this.editPurchaseForm.taxType === 'exclusive') {
         taxAmount = amount * (this.vatRate / 100);
       } else if (this.editPurchaseForm.taxType === 'inclusive') {
-        taxAmount = amount - (amount / (1 + (this.vatRate / 100)));
+        const rate = this.vatRate / 100;
+        // Calculate tax from the total inclusive amount
+        taxAmount = amount * (rate / (1 + rate));
       }
+      // Only format for display, the internal number might have more precision
       this.calculatedPurchaseTaxEdit = taxAmount.toFixed(2);
     },
 
     async submitAddPurchaseForm() {
       try {
-        // Explicitly check for null/empty values for required fields
         if (
           !this.addPurchaseForm.amount ||
           isNaN(parseFloat(this.addPurchaseForm.amount)) ||
           parseFloat(this.addPurchaseForm.amount) < 0 ||
-          this.addPurchaseForm.categoryId === null || // Ensure categoryId is selected
-          this.addPurchaseForm.taxType === null // Ensure taxType is selected
+          this.addPurchaseForm.categoryId === null ||
+          this.addPurchaseForm.taxType === null
         ) {
           throw new Error("Amount, category, and tax type are required and must be valid.");
         }
-        
-        const amount = parseFloat(this.addPurchaseForm.amount);
-        const purchaseTaxAmount = parseFloat(this.calculatedPurchaseTax);
+
+        const originalEnteredAmount = parseFloat(this.addPurchaseForm.amount);
+        let amountToSave = originalEnteredAmount; // This will be the 'net' amount for inclusive
+        let taxAmountToSave = 0;
+
+        if (this.addPurchaseForm.taxType === 'exclusive') {
+          taxAmountToSave = originalEnteredAmount * (this.vatRate / 100);
+        } else if (this.addPurchaseForm.taxType === 'inclusive') {
+          const rate = this.vatRate / 100;
+          amountToSave = originalEnteredAmount / (1 + rate); // This is the amount before tax
+          taxAmountToSave = originalEnteredAmount - amountToSave; // This is the calculated tax
+        }
 
         const purchasePayload = {
           date: format(this.selectedFromDateInternal, "yyyy-MM-dd"),
           companyId: parseInt(this.companyId),
-          amount: amount,
-          purchase_tax_amount: purchaseTaxAmount,
-          // expense_type: this.addPurchaseForm.expense_type, // Removed
+          // Ensure values are numbers and formatted to 2 decimal places for database consistency
+          amount: parseFloat(amountToSave.toFixed(2)),
+          purchase_tax_amount: parseFloat(taxAmountToSave.toFixed(2)),
           categoryId: parseInt(this.addPurchaseForm.categoryId),
           subcategoryId: this.addPurchaseForm.subcategoryId ? parseInt(this.addPurchaseForm.subcategoryId) : null,
-          taxTypeId: this.getTaxTypeId(this.addPurchaseForm.taxType), // Convert string to ID
+          taxTypeId: this.getTaxTypeId(this.addPurchaseForm.taxType),
           status: parseInt(this.addPurchaseForm.status),
         };
-
-        // --- Console log for purchasePayload ---
-        console.log("Purchase Payload being sent:", purchasePayload);
 
         await this.CREATE_PURCHASE(purchasePayload);
 
@@ -1692,8 +1892,6 @@ export default defineComponent({
             companyId: parseInt(this.companyId),
             image: [this.image],
           };
-          // --- Console log for billPayload ---
-          console.log("Bill Payload being sent:", billPayload);
           await this.ADD_BILL(billPayload);
         }
 
@@ -1701,7 +1899,6 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Purchase and bill added successfully!', 'success');
       } catch (error) {
-        console.error("Error adding purchase and bill:", error);
         this.presentToast('Failed to add purchase and bill: ' + error.message, 'danger');
       }
     },
@@ -1723,13 +1920,11 @@ export default defineComponent({
         } else {
             payload.image = [];
         }
-
         await this.UPDATE_BILL(payload);
         this.closeUpdateModal();
         await this.loadAllData();
         this.presentToast('Bill image updated successfully!', 'success');
       } catch (error) {
-        console.error("Error updating bill:", error);
         this.presentToast('Failed to update bill image: ' + error.message, 'danger');
       }
     },
@@ -1744,7 +1939,6 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Bill image deleted successfully!', 'success');
       } catch (error) {
-        console.error("Error deleting bill:", error);
         this.presentToast('Failed to delete bill image.', 'danger');
       }
     },
@@ -1756,19 +1950,50 @@ export default defineComponent({
     },
     editPurchaseData(purchase) {
       const formattedDate = format(parseISO(purchase.date), "yyyy-MM-dd");
+
+      let categoryId = null;
+      let subcategoryId = null;
+
+      if (purchase.categoryId) {
+          categoryId = parseInt(purchase.categoryId);
+      } else if (purchase.subcategory && purchase.subcategory.category && purchase.subcategory.category.id) {
+          categoryId = parseInt(purchase.subcategory.category.id);
+      } else if (purchase.subcategory && purchase.subcategory.categoryId) {
+          categoryId = parseInt(purchase.subcategory.categoryId);
+      }
+
+      if (purchase.subcategoryId) {
+          subcategoryId = parseInt(purchase.subcategoryId);
+      } else if (purchase.subcategory && purchase.subcategory.id) {
+          subcategoryId = parseInt(purchase.subcategory.id);
+      }
+
+      // When editing an inclusive purchase, we need to convert the stored 'amount' (net of tax)
+      // back to the total inclusive amount for the user to see and edit.
+      let displayAmount = purchase.amount;
+      const taxTypeString = this.getTaxTypeString(purchase.taxTypeId);
+      if (taxTypeString === 'inclusive') {
+        displayAmount = purchase.amount + purchase.purchase_tax_amount;
+      }
+
+
       this.editPurchaseForm = {
-        id: purchase.id,
-        // expense_type: purchase.expense_type || "", // Removed
-        date: formattedDate,
-        companyId: purchase.companyId,
-        amount: purchase.amount.toString(),
-        purchase_tax_amount: purchase.purchase_tax_amount.toString(),
-        categoryId: purchase.categoryId || null,
-        subcategoryId: purchase.subcategoryId || null,
-        taxType: this.getTaxTypeString(purchase.taxTypeId) || "exclusive", // Convert ID to string
-        status: purchase.status ? purchase.status.toString() : "1",
-      }; // Corrected: Removed the extra ')' here
-      this.calculatePurchaseTaxEdit(); // Recalculate based on fetched data
+          id: purchase.id,
+          date: formattedDate,
+          companyId: parseInt(purchase.companyId),
+          amount: displayAmount.toFixed(2), // Display the original total amount for inclusive, formatted
+          purchase_tax_amount: purchase.purchase_tax_amount.toFixed(2),
+          categoryId: categoryId,
+          subcategoryId: subcategoryId,
+          taxType: taxTypeString || "exclusive",
+          status: purchase.status ? "1" : "0",
+      };
+
+      this.$nextTick(() => {
+          // Ensure that calculatedPurchaseTaxEdit reflects the current form state
+          this.calculatePurchaseTaxEdit();
+      });
+
       this.showEditPurchaseDataModal = true;
       this.closeDetailedPurchaseView();
       this.closePurchasePopover();
@@ -1777,7 +2002,6 @@ export default defineComponent({
       this.showEditPurchaseDataModal = false;
       this.editPurchaseForm = {
         id: null,
-        // expense_type: "", // Removed
         date: "",
         companyId: "",
         amount: "",
@@ -1805,12 +2029,25 @@ export default defineComponent({
           this.editPurchaseForm.status = "1";
         }
 
+        const originalEnteredAmount = parseFloat(this.editPurchaseForm.amount);
+        let amountToSave = originalEnteredAmount; // This will be the 'net' amount for inclusive
+        let taxAmountToSave = 0;
+
+        if (this.editPurchaseForm.taxType === 'inclusive') {
+          const rate = this.vatRate / 100;
+          amountToSave = originalEnteredAmount / (1 + rate); // This is the amount before tax
+          taxAmountToSave = originalEnteredAmount - amountToSave; // This is the calculated tax
+        } else if (this.editPurchaseForm.taxType === 'exclusive') {
+            taxAmountToSave = originalEnteredAmount * (this.vatRate / 100);
+        }
+        // For 'zero_tax', both amountToSave and taxAmountToSave will remain as entered (or 0 for tax)
+
         const purchaseData = {
           date: this.editPurchaseForm.date,
           companyId: parseInt(this.editPurchaseForm.companyId),
-          amount: parseFloat(this.editPurchaseForm.amount),
-          purchase_tax_amount: parseFloat(this.calculatedPurchaseTaxEdit),
-          // expense_type: this.editPurchaseForm.expense_type, // Removed
+          // Ensure values are numbers and formatted to 2 decimal places for database consistency
+          amount: parseFloat(amountToSave.toFixed(2)),
+          purchase_tax_amount: parseFloat(taxAmountToSave.toFixed(2)),
           categoryId: parseInt(this.editPurchaseForm.categoryId),
           subcategoryId: this.editPurchaseForm.subcategoryId ? parseInt(this.editPurchaseForm.subcategoryId) : null,
           taxTypeId: this.getTaxTypeId(this.editPurchaseForm.taxType),
@@ -1825,7 +2062,6 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Purchase data updated successfully!', 'success');
       } catch (error) {
-        console.error("Error updating purchase data:", error);
         this.presentToast('Failed to update purchase data: ' + error.message, 'danger');
       }
     },
@@ -1841,7 +2077,6 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Purchase data deleted successfully!', 'success');
       } catch (error) {
-        console.error("Error deleting purchase data:", error);
         this.presentToast('Failed to delete purchase data.', 'danger');
       }
     },
@@ -1869,10 +2104,8 @@ export default defineComponent({
       const purchaseDate = format(parseISO(purchase.date), "yyyy-MM-dd");
       this.imagesForDetailedPurchase = this.PurchaseList.data.filter((bill) => {
         const billDate = format(parseISO(bill.date), "yyyy-MM-dd");
-        return (
-          bill.companyId?.toString() === purchase.companyId?.toString() &&
-          billDate === purchaseDate
-        );
+        const matchesBill = bill.companyId?.toString() === purchase.companyId?.toString() && billDate === purchaseDate;
+        return matchesBill;
       });
       this.showDetailedPurchaseModal = true;
       this.closePurchasePopover();
@@ -1901,14 +2134,13 @@ export default defineComponent({
     },
     openAddPurchaseModal() {
       this.addPurchaseForm = {
-        // expense_type: "", // Removed
         date: format(this.selectedFromDateInternal, "yyyy-MM-dd"),
         companyId: parseInt(this.companyId),
         amount: "",
         purchase_tax_amount: 0,
-        categoryId: null, // Initialize as null
-        subcategoryId: null, // Initialize as null
-        taxType: "exclusive", // Default
+        categoryId: null,
+        subcategoryId: null,
+        taxType: "exclusive",
         status: "1",
       };
       this.calculatedPurchaseTax = 0;
@@ -1920,10 +2152,9 @@ export default defineComponent({
       this.handleReset();
     },
 
-    // Sales-specific methods
     openSalePopover(e, item) {
       this.salePopoverEvent = e;
-      this.selectedSaleItem = { ...item, companyId: item.company.id };
+      this.selectedSaleItem = { ...item, companyId: item.company.id, saleTypeId: item.saleTypeId ? item.saleTypeId : null }; // Adjusted saleTypeId mapping
       this.showSalePopover = true;
     },
     closeSalePopover() {
@@ -1945,6 +2176,7 @@ export default defineComponent({
       this.newSale = {
         date: format(this.selectedFromDateInternal, "yyyy-MM-dd"),
         companyId: parseInt(this.companyId),
+        saleTypeId: null, // Initialize saleTypeId
         amount: null,
         sale_tax_amount: null
       };
@@ -1960,7 +2192,8 @@ export default defineComponent({
     formatDateForInput(dateString) {
       if (!dateString) return '';
       const date = new Date(dateString);
-      return isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+      const formatted = isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+      return formatted;
     },
     confirmDeleteSale() {
       this.showSalePopover = false;
@@ -1974,10 +2207,14 @@ export default defineComponent({
         if (this.newSale.companyId === null || this.newSale.companyId === '' || isNaN(parseInt(this.newSale.companyId))) {
             throw new Error("Company must be selected.");
         }
+        if (this.newSale.saleTypeId === null || this.newSale.saleTypeId === '' || isNaN(parseInt(this.newSale.saleTypeId))) {
+            throw new Error("Sale Type must be selected.");
+        }
 
         const payload = {
           date: this.newSale.date,
           companyId: parseInt(this.newSale.companyId),
+          saleTypeId: parseInt(this.newSale.saleTypeId), // Include saleTypeId
           amount: Number(this.newSale.amount),
           sale_tax_amount: Number((parseFloat(this.newSale.amount) * (this.vatRate / 100)).toFixed(2))
         };
@@ -1986,14 +2223,14 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Sale added successfully!', 'success');
       } catch (error) {
-        console.error('Error adding sale:', error);
         this.presentToast('Failed to add sale: ' + error.message, 'danger');
       }
     },
     async updateSale() {
       try {
         if (!this.selectedSaleItem.id || !this.selectedSaleItem.date || !this.selectedSaleItem.companyId ||
-            this.selectedSaleItem.amount === null || this.selectedSaleItem.amount === '' || isNaN(parseFloat(this.selectedSaleItem.amount))) {
+            this.selectedSaleItem.amount === null || this.selectedSaleItem.amount === '' || isNaN(parseFloat(this.selectedSaleItem.amount)) ||
+            this.selectedSaleItem.saleTypeId === null || this.selectedSaleItem.saleTypeId === '' || isNaN(parseInt(this.selectedSaleItem.saleTypeId))) { // Added saleTypeId check
           throw new Error("Missing required fields for sale update.");
         }
 
@@ -2001,6 +2238,7 @@ export default defineComponent({
             id: this.selectedSaleItem.id,
             date: this.selectedSaleItem.date,
             companyId: parseInt(this.selectedSaleItem.companyId),
+            saleTypeId: parseInt(this.selectedSaleItem.saleTypeId), // Include saleTypeId
             amount: Number(this.selectedSaleItem.amount),
             sale_tax_amount: Number((parseFloat(this.selectedSaleItem.amount) * (this.vatRate / 100)).toFixed(2))
         };
@@ -2010,7 +2248,6 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Sale updated successfully!', 'success');
       } catch (error) {
-        console.error('Error updating sale:', error);
         this.presentToast('Failed to update sale: ' + error.message, 'danger');
       }
     },
@@ -2024,17 +2261,16 @@ export default defineComponent({
         await this.loadAllData();
         this.presentToast('Sale deleted successfully!', 'success');
       } catch (error) {
-        console.error('Error deleting sale:', error);
         this.presentToast('Failed to delete sale.', 'danger');
       }
     },
     formatDate(dateString) {
       if (!dateString) return 'N/A';
       const date = new Date(dateString);
-      return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'yyyy-MM-dd');
+      const formatted = isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'yyyy-MM-dd');
+      return formatted;
     },
 
-    // Category Methods
     openAddCategoryModal() {
       this.addCategoryForm.cat_name = "";
       this.showAddCategoryModal = true;
@@ -2053,24 +2289,20 @@ export default defineComponent({
         const response = await this.CREATE_CATEGORY(categoryData);
         await this.GET_CATEGORY_LIST();
         if (response && response.data && response.data.id) {
-          // If response.data.id is available
           this.addPurchaseForm.categoryId = response.data.id;
         } else if (response && response.data && response.data.data && response.data.data.id) {
-          // If response.data.data.id is available (for nested response)
           this.addPurchaseForm.categoryId = response.data.data.id;
         }
         this.closeAddCategoryModal();
         this.presentToast('Category created successfully!', 'success');
       } catch (error) {
-        console.error("Error creating category:", error);
         this.presentToast('Failed to create category: ' + error.message, 'danger');
       }
     },
     openEditCategoryModal() {
-      // Use the categoryId from the add/edit purchase form's current selection
       const categoryIdToEdit = this.showAddPurchaseModal
-                                    ? this.addPurchaseForm.categoryId
-                                    : this.editPurchaseForm.categoryId;
+                                     ? this.addPurchaseForm.categoryId
+                                     : this.editPurchaseForm.categoryId;
 
       if (!categoryIdToEdit) {
         this.presentToast('Please select a category to edit.', 'warning');
@@ -2102,14 +2334,13 @@ export default defineComponent({
         this.closeEditCategoryModal();
         this.presentToast('Category updated successfully!', 'success');
       } catch (error) {
-        console.error("Error updating category:", error);
         this.presentToast('Failed to update category: ' + error.message, 'danger');
       }
     },
     confirmDeleteCategory() {
-       const categoryIdToDelete = this.showAddPurchaseModal
-                                   ? this.addPurchaseForm.categoryId
-                                   : this.editPurchaseForm.categoryId;
+        const categoryIdToDelete = this.showAddPurchaseModal
+                                           ? this.addPurchaseForm.categoryId
+                                           : this.editPurchaseForm.categoryId;
 
       if (!categoryIdToDelete) {
         this.presentToast('Please select a category to delete.', 'warning');
@@ -2123,7 +2354,6 @@ export default defineComponent({
         await this.DELETE_CATEGORY(this.categoryToDeleteId);
         this.showDeleteCategoryAlert = false;
         await this.loadAllData();
-        // Clear selected category in forms if it was deleted
         if (this.addPurchaseForm.categoryId === this.categoryToDeleteId) {
           this.addPurchaseForm.categoryId = null;
           this.addPurchaseForm.subcategoryId = null;
@@ -2134,14 +2364,11 @@ export default defineComponent({
         }
         this.presentToast('Category deleted successfully!', 'success');
       } catch (error) {
-        console.error("Error deleting category:", error);
         this.presentToast('Failed to delete category.', 'danger');
       }
     },
 
-    // Subcategory Methods
     openAddSubcategoryModal() {
-      // Determine the category ID based on which purchase modal is open
       let selectedCategoryId = null;
       if (this.showAddPurchaseModal) {
         selectedCategoryId = this.addPurchaseForm.categoryId;
@@ -2149,7 +2376,6 @@ export default defineComponent({
         selectedCategoryId = this.editPurchaseForm.categoryId;
       }
 
-      // Set the categoryId for the addSubcategoryForm
       this.addSubcategoryForm.categoryId = selectedCategoryId;
       this.addSubcategoryForm.sub_name = "";
       this.showAddSubcategoryModal = true;
@@ -2176,14 +2402,13 @@ export default defineComponent({
         this.closeAddSubcategoryModal();
         this.presentToast('Subcategory created successfully!', 'success');
       } catch (error) {
-        console.error("Error creating subcategory:", error);
         this.presentToast('Failed to create subcategory: ' + error.message, 'danger');
       }
     },
     openEditSubcategoryModal() {
       const subcategoryIdToEdit = this.showAddPurchaseModal
-                                     ? this.addPurchaseForm.subcategoryId
-                                     : this.editPurchaseForm.subcategoryId;
+                                         ? this.addPurchaseForm.subcategoryId
+                                         : this.editPurchaseForm.subcategoryId;
 
       if (!subcategoryIdToEdit) {
         this.presentToast('Please select a subcategory to edit.', 'warning');
@@ -2208,9 +2433,9 @@ export default defineComponent({
         }
         const payload = {
           id: this.editSubcategoryForm.id,
-          subcategoryData: { 
+          subcategoryData: {
             categoryId: parseInt(this.editSubcategoryForm.categoryId),
-            sub_name: this.editSubcategoryForm.sub_name.trim()  
+            sub_name: this.editSubcategoryForm.sub_name.trim()
           }
         };
         await this.UPDATE_SUBCATEGORY(payload);
@@ -2218,14 +2443,13 @@ export default defineComponent({
         this.closeEditSubcategoryModal();
         this.presentToast('Subcategory updated successfully!', 'success');
       } catch (error) {
-        console.error("Error updating subcategory:", error);
         this.presentToast('Failed to update subcategory: ' + error.message, 'danger');
       }
     },
     confirmDeleteSubcategory() {
       const subcategoryIdToDelete = this.showAddPurchaseModal
-                                       ? this.addPurchaseForm.subcategoryId
-                                       : this.editPurchaseForm.subcategoryId;
+                                           ? this.addPurchaseForm.subcategoryId
+                                           : this.editPurchaseForm.subcategoryId;
       if (!subcategoryIdToDelete) {
         this.presentToast('Please select a subcategory to delete.', 'warning');
         return;
@@ -2238,7 +2462,6 @@ export default defineComponent({
         await this.DELETE_SUBCATEGORY(this.subcategoryToDeleteId);
         this.showDeleteSubcategoryAlert = false;
         await this.loadAllData();
-        // Clear selected subcategory in forms if it was deleted
         if (this.addPurchaseForm.subcategoryId === this.subcategoryToDeleteId) {
           this.addPurchaseForm.subcategoryId = null;
         }
@@ -2247,11 +2470,9 @@ export default defineComponent({
         }
         this.presentToast('Subcategory deleted successfully!', 'success');
       } catch (error) {
-        console.error("Error deleting subcategory:", error);
         this.presentToast('Failed to delete subcategory.', 'danger');
       }
     },
-    // Maps taxType string to a numerical ID for backend
     getTaxTypeId(taxTypeString) {
       switch(taxTypeString) {
         case 'inclusive': return 1;
@@ -2260,7 +2481,6 @@ export default defineComponent({
         default: return null;
       }
     },
-    // Maps numerical taxTypeId from backend to a string for UI
     getTaxTypeString(taxTypeId) {
       switch(taxTypeId) {
         case 1: return 'inclusive';
@@ -2268,7 +2488,104 @@ export default defineComponent({
         case 3: return 'zero_tax';
         default: return null;
       }
-    }
+    },
+
+    // Sale Type Management Methods
+    openAddSaleTypeModal() {
+      this.addSaleTypeForm.saletype = "";
+      this.showAddSaleTypeModal = true;
+    },
+    closeAddSaleTypeModal() {
+      this.showAddSaleTypeModal = false;
+    },
+    async submitAddSaleTypeForm() {
+      try {
+        if (!this.addSaleTypeForm.saletype.trim()) {
+          throw new Error("Sale type name is required.");
+        }
+        const payload = { saletype: this.addSaleTypeForm.saletype.trim() };
+        const response = await this.CREATE_SALETYPE(payload);
+        await this.GET_SALETYPE_LIST();
+        // Set the newly created sale type as selected in the form
+        if (this.showAddSaleModal && response && response.data && response.data.id) {
+          this.newSale.saleTypeId = response.data.id;
+        } else if (this.showAddSaleModal && response && response.data && response.data.data && response.data.data.id) {
+          this.newSale.saleTypeId = response.data.data.id;
+        } else if (this.showUpdateSaleModal && response && response.data && response.data.id) {
+          this.selectedSaleItem.saleTypeId = response.data.id;
+        } else if (this.showUpdateSaleModal && response && response.data && response.data.data && response.data.data.id) {
+          this.selectedSaleItem.saleTypeId = response.data.data.id;
+        }
+        this.closeAddSaleTypeModal();
+        this.presentToast('Sale type added successfully!', 'success');
+      } catch (error) {
+        this.presentToast('Failed to add sale type: ' + error.message, 'danger');
+      }
+    },
+    openEditSaleTypeModal() {
+      const saleTypeIdToEdit = this.showAddSaleModal
+        ? this.newSale.saleTypeId
+        : this.selectedSaleItem.saleTypeId;
+
+      if (!saleTypeIdToEdit) {
+        this.presentToast('Please select a sale type to edit.', 'warning');
+        return;
+      }
+      const saleType = this.saleTypes.find(st => st.id === saleTypeIdToEdit);
+      if (saleType) {
+        this.editSaleTypeForm = { ...saleType };
+        this.showEditSaleTypeModal = true;
+      } else {
+        this.presentToast('Selected sale type not found. Please refresh and try again.', 'danger');
+      }
+    },
+    closeEditSaleTypeModal() {
+      this.showEditSaleTypeModal = false;
+      this.editSaleTypeForm = { id: null, saletype: "" };
+    },
+    async submitEditSaleTypeForm() {
+      try {
+        if (!this.editSaleTypeForm.id || !this.editSaleTypeForm.saletype.trim()) {
+          throw new Error("Sale type ID and name are required.");
+        }
+        const payload = { id: this.editSaleTypeForm.id, saletype: this.editSaleTypeForm.saletype.trim() };
+        await this.UPDATE_SALETYPE(payload);
+        await this.GET_SALETYPE_LIST();
+        this.closeEditSaleTypeModal();
+        this.presentToast('Sale type updated successfully!', 'success');
+      } catch (error) {
+        this.presentToast('Failed to update sale type: ' + error.message, 'danger');
+      }
+    },
+    confirmDeleteSaleType() {
+      const saleTypeIdToDelete = this.showAddSaleModal
+        ? this.newSale.saleTypeId
+        : this.selectedSaleItem.saleTypeId;
+
+      if (!saleTypeIdToDelete) {
+        this.presentToast('Please select a sale type to delete.', 'warning');
+        return;
+      }
+      this.saleTypeToDeleteId = saleTypeIdToDelete;
+      this.showDeleteSaleTypeAlert = true;
+    },
+    async deleteSaleType() {
+      try {
+        await this.DELETE_SALETYPE(this.saleTypeToDeleteId);
+        this.showDeleteSaleTypeAlert = false;
+        await this.loadAllData();
+        // Reset the selected sale type in forms if the deleted one was selected
+        if (this.newSale.saleTypeId === this.saleTypeToDeleteId) {
+          this.newSale.saleTypeId = null;
+        }
+        if (this.selectedSaleItem.saleTypeId === this.saleTypeToDeleteId) {
+          this.selectedSaleItem.saleTypeId = null;
+        }
+        this.presentToast('Sale type deleted successfully!', 'success');
+      } catch (error) {
+        this.presentToast('Failed to delete sale type.', 'danger');
+      }
+    },
   },
   watch: {
     'companyId': {
@@ -2293,18 +2610,21 @@ export default defineComponent({
       }
     },
     'addPurchaseForm.categoryId': {
-      handler() {
-        this.addPurchaseForm.subcategoryId = null; // Clear subcategory when category changes
+      handler(newCatId, oldCatId) {
+        if (newCatId !== oldCatId) {
+          this.addPurchaseForm.subcategoryId = null;
+        }
       }
     },
     'editPurchaseForm.categoryId': {
-      handler() {
-        // Only clear if the previous subcategory is not valid for the new category
-        const currentSubcategory = this.editPurchaseForm.subcategoryId;
-        if (currentSubcategory) {
-          const sub = this.getSubcategoryById(currentSubcategory);
-          if (!sub || sub.categoryId !== this.editPurchaseForm.categoryId) {
-            this.editPurchaseForm.subcategoryId = null;
+      handler(newCatId, oldCatId) {
+        if (newCatId !== oldCatId) {
+          const currentSubcategory = this.editPurchaseForm.subcategoryId;
+          if (currentSubcategory) {
+            const sub = this.getSubcategoryById(currentSubcategory);
+            if (!sub || sub.categoryId !== this.editPurchaseForm.categoryId) {
+              this.editPurchaseForm.subcategoryId = null;
+            }
           }
         }
       }
@@ -2313,24 +2633,27 @@ export default defineComponent({
     'addPurchaseForm.taxType': 'calculatePurchaseTax',
     'editPurchaseForm.amount': 'calculatePurchaseTaxEdit',
     'editPurchaseForm.taxType': 'calculatePurchaseTaxEdit',
+    selectedSegment(newVal, oldVal) {
+      if (newVal === 'purchase' && oldVal !== 'purchase') {
+        this.loadAllData();
+      } else if (newVal === 'sales' && oldVal !== 'sales') {
+        this.loadAllData();
+      }
+    }
   },
   mounted() {
     const today = new Date();
     this.selectedFromDateInternal = today;
     this.selectedToDateInternal = today;
 
-    this.loadAllData();
+    if (this.companyId) {
+      this.loadAllData();
+    }
     this.handleReset();
   }
 });
 </script>
 
-
-
-
-
-
-
 <style scoped>
 /* Add your existing styles here */
 .select-with-actions {
@@ -2357,36 +2680,7 @@ ion-list-header {
   margin-bottom: 8px;
   font-weight: bold;
 }
-</style>
 
-<style scoped>
-/* Add your existing styles here */
-.select-with-actions {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.select-with-actions ion-select {
-  flex-grow: 1;
-  margin-right: 8px; /* Space between select and buttons */
-}
-
-.select-with-actions .action-button {
-  --padding-start: 4px;
-  --padding-end: 4px;
-  --min-width: 32px;
-  height: 32px;
-}
-
-/* Optional: Styles for radio buttons if needed */
-ion-list-header {
-  margin-top: 16px;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-</style>
-<style scoped>
 /* Base styles for ion-content and other components */
 ion-content {
   --background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
@@ -2804,12 +3098,12 @@ ion-modal ion-toolbar {
 ion-modal ion-title {
   font-size: 20px;
   font-weight: 600;
-  color: white;
+  color: black; /* Changed to black for light theme header */
 }
 
 ion-modal ion-buttons ion-button {
-  --color: white;
-  --background-hover: rgba(255, 255, 255, 0.1);
+  --color: black; /* Changed to black for light theme header */
+  --background-hover: rgba(0, 0, 0, 0.05);
   --border-radius: 8px;
 }
 
